@@ -101,9 +101,14 @@ class _WaliManagementPageState extends State<WaliManagementPage> {
         leading: const Icon(Icons.family_restroom, color: _green),
         title: Text(r['relationship_label']?.toString() ?? 'Trusted representative'),
         subtitle: Text('Status: ${r['status']}'),
-        trailing: r['member_user_id'] != Supabase.instance.client.auth.currentUser?.id ? const SizedBox.shrink() : TextButton(
-          onPressed: () async { await _repo.revokeWali(r['id'].toString()); await _load(); },
-          child: const Text('Revoke')),
+        trailing: r['member_user_id'] == Supabase.instance.client.auth.currentUser?.id
+          ? TextButton(onPressed: () async { await _repo.revokeWali(r['id'].toString()); await _load(); }, child: const Text('Revoke'))
+          : r['status'] == 'pending'
+            ? Wrap(children: [
+                TextButton(onPressed: () async { await _repo.respondToWaliInvitation(r['id'].toString(), accept: false); await _load(); }, child: const Text('Decline')),
+                TextButton(onPressed: () async { await _repo.respondToWaliInvitation(r['id'].toString(), accept: true); await _load(); }, child: const Text('Accept')),
+              ])
+            : const SizedBox.shrink(),
       ))),
     ]),
   );}
