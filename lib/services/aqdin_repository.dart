@@ -249,13 +249,13 @@ class AqdinRepository {
     String? relationship,
     Map<String, dynamic>? permissions,
   }) async {
-    await _client.from('wali_relationships').upsert({
+    await _client.from('wali_relationships').insert({
       'member_user_id': _uid, 'wali_user_id': waliUserId,
       'relationship_label': relationship, 'status': 'pending',
       'permissions': permissions ?? {
         'view_profile': true, 'view_matches': false, 'view_messages': false,
       },
-    }, onConflict: 'member_user_id,wali_user_id');
+    });
   }
 
   Future<List<Map<String, dynamic>>> myWaliRelationships() async {
@@ -266,14 +266,19 @@ class AqdinRepository {
   }
 
   Future<void> updateWaliPermissions(String relationshipId, Map<String, dynamic> permissions) async {
-    await _client.from('wali_relationships').update({'permissions': permissions})
-      .eq('id', relationshipId).eq('member_user_id', _uid);
+    await _client.rpc('update_wali_permissions', params: {
+      'relationship_uuid': relationshipId, 'new_permissions': permissions,
+    });
+  }
+
+  Future<void> respondToWaliInvitation(String relationshipId, {required bool accept}) async {
+    await _client.rpc('respond_to_wali_invitation', params: {
+      'relationship_uuid': relationshipId, 'decision': accept ? 'active' : 'declined',
+    });
   }
 
   Future<void> revokeWali(String relationshipId) async {
-    await _client.from('wali_relationships').update({
-      'status': 'revoked', 'revoked_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', relationshipId).eq('member_user_id', _uid);
+    await _client.rpc('revoke_wali_relationship', params: {'relationship_uuid': relationshipId});
   }
 
   Future<void> saveUserSettings({
