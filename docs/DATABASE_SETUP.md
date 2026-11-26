@@ -15,8 +15,9 @@ In the existing AQDIN Supabase project, open **SQL Editor** and run any migratio
 3. `supabase/migrations/202611260003_matchmaking_messaging.sql`
 4. `supabase/migrations/202611260004_member_experience.sql`
 5. `supabase/migrations/202611260005_private_profile_photo_storage.sql`
+6. `supabase/migrations/202611260006_wali_permission_hardening.sql`
 
-The repair migration is safe to rerun. The later migrations are additive and designed to preserve existing user/profile rows. If an earlier migration has already been applied, do not re-run it blindly if Supabase reports a policy or object conflict; check the existing object first.
+The repair migration is safe to rerun. The later migrations are additive and designed to preserve existing user/profile rows. Apply migrations 003–006 if they have not already been applied. If an earlier migration has already been applied, do not re-run it blindly if Supabase reports a policy or object conflict; check the existing object first.
 
 The fifth migration creates a **private** `profile-photos` Storage bucket. Member photos are not publicly exposed; the app uses time-limited signed URLs. New uploads remain pending until a moderation workflow approves them.
 
