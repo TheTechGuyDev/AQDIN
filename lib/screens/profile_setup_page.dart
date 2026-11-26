@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dashboard_page.dart';
 
 class ProfileSetupPage extends StatefulWidget {
   const ProfileSetupPage({super.key});
@@ -34,6 +35,11 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         'gender': _gender, 'marital_status': _marital, 'country_code': _country.text.trim(), 'city': _city.text.trim(),
         'bio': _bio.text.trim(), 'onboarding_complete': true, 'updated_at': DateTime.now().toUtc().toIso8601String(),
       });
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const DashboardPage()),
+        (route) => false,
+      );
     } on PostgrestException catch (e) { setState(() => _error = e.message); }
     catch (_) { setState(() => _error = 'Could not save your profile. Please try again.'); }
     finally { if (mounted) setState(() => _saving = false); }
