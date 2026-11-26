@@ -60,7 +60,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
     final index = _cardIndex;
     setState(() { _exitDirection = liked ? 1 : -1; _dragX = liked ? 520 : -520; });
     HapticFeedback.mediumImpact();
-    SystemSound.play(liked ? SystemSoundType.alert : SystemSoundType.click);
+    SystemSound.play(SystemSoundType.click);
     if (liked) { _liked.add(index); } else { _passed.add(index); }
     await Future.delayed(const Duration(milliseconds: 310));
     if (!mounted) return;
@@ -159,8 +159,8 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
           if(_profiles.length>1) Positioned.fill(child:Padding(padding:const EdgeInsets.only(top:9,left:7,right:7,bottom:3),child:ClipRRect(borderRadius:BorderRadius.circular(30),child:Container(color:const Color(0xFFE7EAE4))))),
           Positioned.fill(child:GestureDetector(
             onPanStart:(_)=>HapticFeedback.selectionClick(),
-            onPanUpdate:(d){if(!_busy)setState(()=>{_dragX+=d.delta.dx,_dragY+=d.delta.dy});},
-            onPanEnd:(d){if(_dragX>105){_swipe(true);}else if(_dragX < -105){_swipe(false);}else{setState(()=>{_dragX=0,_dragY=0});}},
+            onPanUpdate:(d){if(!_busy)setState(() { _dragX+=d.delta.dx; _dragY+=d.delta.dy; });},
+            onPanEnd:(d){if(_dragX>105){_swipe(true);}else if(_dragX < -105){_swipe(false);}else{setState(() { _dragX=0; _dragY=0; });}},
             onTap:()=>_open('${p.name} • Profile',detail:p.about),
             child:Transform.translate(offset:Offset(_dragX,_dragY*.18),child:Transform.rotate(
               angle:(_dragX/900).clamp(-.22,.22),
