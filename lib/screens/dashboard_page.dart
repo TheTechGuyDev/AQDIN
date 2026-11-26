@@ -76,7 +76,9 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
       ? const WaliManagementPage()
       : key.contains('marriage preferences')
         ? const MarriagePreferencesPage()
-        : key.contains('safety') || key.contains('blocked')
+        : key.contains('verification')
+          ? const VerificationPage()
+          : key.contains('safety') || key.contains('blocked')
           ? const SafetyCenterPage()
           : key.contains('notification')
             ? const NotificationsPage()
@@ -287,32 +289,65 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
     const SizedBox(height:5),Text(label,style:const TextStyle(fontSize:10,color:_muted,fontWeight:FontWeight.w700)),
   ]);
 
-  Widget _matches()=>ListView(padding:const EdgeInsets.only(bottom:120),children:[
-    _header('MUTUAL INTEREST','Likes & matches'),
-    _emptyCard(Icons.favorite_border_rounded,'Your connections begin with a yes','When interest is mutual, your matches and introductions will appear here.'),
-    _sectionHeading('Your activity'),
-    _simpleRows([
-      ('People who liked you',Icons.favorite_border,'See incoming interest'),
-      ('Your likes',Icons.favorite,'${_liked.length} profiles liked in this preview'),
-      ('Passed profiles',Icons.close,'${_passed.length} profiles passed in this preview'),
-      ('Saved profiles',Icons.bookmark_border,'${_saved.length} profiles saved in this preview'),
-      ('Introduction requests',Icons.handshake_outlined,'Track requests and replies'),
-      ('Compatibility insights',Icons.insights_outlined,'Explore shared values and differences'),
-    ]),
-  ]);
+  Widget _matches() => FutureBuilder<List<Map<String,dynamic>>>(
+    future: _repo.myConversations(),
+    builder: (context, snapshot) {
+      final rows = snapshot.data ?? [];
+      return ListView(padding: const EdgeInsets.only(bottom:120), children: [
+        _header('MUTUAL INTEREST','Likes & matches'),
+        if (snapshot.connectionState == ConnectionState.waiting)
+          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(color:_green)))
+        else if (rows.isEmpty)
+          _emptyCard(Icons.favorite_border_rounded,'Your connections begin with a yes','When interest is mutual, your matches and private conversations will appear here.')
+        else ...rows.map((row) {
+          final profile = row['other_profile'] as Map<String,dynamic>?;
+          final name = profile?['display_name']?.toString() ?? 'AQDIN member';
+          return Padding(padding: const EdgeInsets.symmetric(horizontal:18,vertical:5), child: Card(color:Colors.white,
+            child: ListTile(leading: const CircleAvatar(backgroundColor:Color(0xFFEAF2EC),child:Icon(Icons.favorite,color:_green)),
+              title: Text(name), subtitle: const Text('Mutual match • Start a thoughtful conversation'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context,MaterialPageRoute(builder: (_) => ChatPage(conversationId:row['id'].toString(),title:name))),
+            )));
+        }),
+        _sectionHeading('Your activity'),
+        _simpleRows([
+          ('Introduction requests',Icons.handshake_outlined,'Review and respond to introductions'),
+          ('Compatibility insights',Icons.insights_outlined,'Explore shared values and differences'),
+        ]),
+      ]);
+    },
+  );
 
-  Widget _messages()=>ListView(padding:const EdgeInsets.only(bottom:120),children:[
-    _header('PRIVATE CONVERSATIONS','Messages',trailing:_roundAction(Icons.tune_rounded,()=>_open('Message settings'))),
-    _emptyCard(Icons.forum_outlined,'Your conversations start here','Messages become available when an introduction is accepted. Your private chats are not shared with a Wali by default.'),
-    _sectionHeading('Your conversations'),
-    _simpleRows([
-      ('Message requests',Icons.mark_chat_unread_outlined,'Review requests before accepting'),
-      ('Archived conversations',Icons.archive_outlined,'Find conversations you archived'),
-      ('Muted conversations',Icons.notifications_off_outlined,'Manage muted chats'),
-      ('Blocked members',Icons.block_outlined,'Manage who can contact you'),
-      ('Safety in conversations',Icons.shield_outlined,'Report or block when needed'),
-    ]),
-  ]);
+  Widget _messages() => FutureBuilder<List<Map<String,dynamic>>>(
+    future: _repo.myConversations(),
+    builder: (context,snapshot) {
+      final rows = snapshot.data ?? [];
+      return ListView(padding: const EdgeInsets.only(bottom:120), children: [
+        _header('PRIVATE CONVERSATIONS','Messages',trailing:_roundAction(Icons.tune_rounded,()=>_open('Message settings'))),
+        if (snapshot.connectionState == ConnectionState.waiting)
+          const Padding(padding: EdgeInsets.all(30), child: Center(child:CircularProgressIndicator(color:_green)))
+        else if (rows.isEmpty)
+          _emptyCard(Icons.forum_outlined,'Your conversations start here','Messages become available after a mutual match. Private chats are not shared with a Wali by default.')
+        else ...rows.map((row) {
+          final profile = row['other_profile'] as Map<String,dynamic>?;
+          final name = profile?['display_name']?.toString() ?? 'AQDIN member';
+          final last = row['last_message'] as Map<String,dynamic>?;
+          return Padding(padding: const EdgeInsets.symmetric(horizontal:18,vertical:4),child: Card(color:Colors.white,
+            child: ListTile(leading: const CircleAvatar(backgroundColor:Color(0xFFEAF2EC),child:Icon(Icons.person,color:_green)),
+              title: Text(name,style: const TextStyle(fontWeight:FontWeight.w700)),
+              subtitle: Text(last?['body']?.toString() ?? 'Start a conversation'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context,MaterialPageRoute(builder: (_) => ChatPage(conversationId:row['id'].toString(),title:name))),
+            )));
+        }),
+        _sectionHeading('Conversation tools'),
+        _simpleRows([
+          ('Blocked members',Icons.block_outlined,'Manage who can contact you'),
+          ('Safety in conversations',Icons.shield_outlined,'Report or block when needed'),
+        ]),
+      ]);
+    },
+  );
 
   Widget _profile(){
     final email=Supabase.instance.client.auth.currentUser?.email??'Signed-in member';
