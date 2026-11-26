@@ -48,11 +48,34 @@ jobs:
       - name: Run tests
         run: flutter test
 
-      - name: Build Android APK
-        run: >-
-          flutter build apk --release
-          --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-          --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build Android APK (retry transient repository errors)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          for attempt in 1 2 3; do
+            echo "Android build attempt $attempt of 3"
+            if flutter build apk --release \
+              --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+              --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 30))
+            fi
+          done
+          echo "Android build failed after 3 attempts."
+          exit 1
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
