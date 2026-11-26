@@ -130,68 +130,71 @@ class AqdinWelcomePage extends StatelessWidget {
     final ready = SupabaseConfig.isConfigured;
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              flex: 6,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(28, 30, 28, 26),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [aqdinDeepGreen, Color(0xFF10513F)]),
-                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(34)),
-                ),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const AqdinLogo(light: true, markSize: 112),
-                    const SizedBox(height: 30),
-                    const Text('Find your person.\nBuild your future.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontFamily: 'serif', fontSize: 30, height: 1.25, fontWeight: FontWeight.w700, color: Colors.white)),
-                    const SizedBox(height: 14),
-                    const Text('A thoughtful space for Muslims seeking marriage, built around intention, compatibility, and trust.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, height: 1.6, color: Color(0xFFD9E7DF))),
+                    Container(
+                      width: double.infinity,
+                      constraints: const BoxConstraints(minHeight: 330),
+                      padding: const EdgeInsets.fromLTRB(28, 34, 28, 30),
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [aqdinDeepGreen, Color(0xFF10513F)]),
+                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(34)),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const AqdinLogo(light: true, markSize: 96),
+                          const SizedBox(height: 22),
+                          const Text('Find your person.\\nBuild your future.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontFamily: 'serif', fontSize: 29, height: 1.2, fontWeight: FontWeight.w700, color: Colors.white)),
+                          const SizedBox(height: 12),
+                          const Text('A thoughtful space for Muslims seeking marriage, built around intention, compatibility, and trust.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 14, height: 1.5, color: Color(0xFFD9E7DF))),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(26, 22, 26, 18),
+                      child: Column(
+                        children: [
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: const [
+                            _WelcomeBenefit(icon: Icons.verified_user_outlined, label: 'Safer\\nintroductions'),
+                            _WelcomeBenefit(icon: Icons.favorite_border, label: 'Serious\\nintentions'),
+                            _WelcomeBenefit(icon: Icons.family_restroom, label: 'Family\\ninvolvement'),
+                          ]),
+                          const SizedBox(height: 20),
+                          Container(width: double.infinity, padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(color: ready ? const Color(0xFFEAF4EE) : const Color(0xFFFFF3E3), borderRadius: BorderRadius.circular(13)),
+                            child: Text(ready ? 'Secure account services are ready' : 'Preview mode — backend configuration is required to create an account',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: ready ? aqdinGreen : const Color(0xFF8A5A16), fontSize: 12, fontWeight: FontWeight.w600))),
+                          const SizedBox(height: 14),
+                          SizedBox(width: double.infinity, height: 54, child: FilledButton(
+                            style: FilledButton.styleFrom(backgroundColor: aqdinGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                            onPressed: ready ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage())) : null,
+                            child: const Text('Create an account', style: TextStyle(fontWeight: FontWeight.w600)))),
+                          const SizedBox(height: 10),
+                          SizedBox(width: double.infinity, height: 54, child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(foregroundColor: aqdinGreen, side: const BorderSide(color: Color(0xFFB7CEC3)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                            onPressed: ready ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage(initialLogin: true))) : null,
+                            child: const Text('I already have an account'))),
+                          const SizedBox(height: 14),
+                          const Text('For adults 18+  •  Marriage with intention', style: TextStyle(fontSize: 11, color: Color(0xFF849089))),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
-            Expanded(
-              flex: 4,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(26, 22, 26, 18),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: const [
-                      _WelcomeBenefit(icon: Icons.verified_user_outlined, label: 'Safer\nintroductions'),
-                      _WelcomeBenefit(icon: Icons.favorite_border, label: 'Serious\nintentions'),
-                      _WelcomeBenefit(icon: Icons.family_restroom, label: 'Family\ninvolvement'),
-                    ]),
-                    const SizedBox(height: 22),
-                    Container(width: double.infinity, padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: ready ? const Color(0xFFEAF4EE) : const Color(0xFFFFF3E3), borderRadius: BorderRadius.circular(13)),
-                      child: Text(ready ? 'Secure account services are ready' : 'Preview mode — backend configuration is required to create an account',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: ready ? aqdinGreen : const Color(0xFF8A5A16), fontSize: 12, fontWeight: FontWeight.w600))),
-                    const SizedBox(height: 14),
-                    SizedBox(width: double.infinity, height: 54, child: FilledButton(
-                      style: FilledButton.styleFrom(backgroundColor: aqdinGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                      onPressed: ready ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage())) : null,
-                      child: const Text('Create an account', style: TextStyle(fontWeight: FontWeight.w600)))),
-                    const SizedBox(height: 10),
-                    SizedBox(width: double.infinity, height: 54, child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(foregroundColor: aqdinGreen, side: const BorderSide(color: Color(0xFFB7CEC3)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                      onPressed: ready ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage(initialLogin: true))) : null,
-                      child: const Text('I already have an account'))),
-                    const SizedBox(height: 14),
-                    const Text('For adults 18+  •  Marriage with intention', style: TextStyle(fontSize: 11, color: Color(0xFF849089))),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
