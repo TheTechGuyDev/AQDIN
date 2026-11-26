@@ -46,10 +46,11 @@ class AqdinRepository {
         .select('target_user_id').eq('actor_user_id', _uid);
     final seenIds = seen.map((row) => row['target_user_id'] as String).toSet();
 
-    return (await Future.wait(rows.map((row) async => Map<String, dynamic>.from(row)))).where((row) {
+    final visibleRows = rows.where((row) {
       final id = row['id'] as String;
       return !blockedIds.contains(id) && !seenIds.contains(id);
-    }).map((row) {
+    }).toList();
+    return await Future.wait(visibleRows.map((row) async {
       final profile = Map<String, dynamic>.from(row);
       final photos = (profile['profile_photos'] as List? ?? [])
           .where((photo) => photo['moderation_status'] == 'approved')
@@ -62,7 +63,7 @@ class AqdinRepository {
         try { profile['primary_photo_url'] = await _client.storage.from('profile-photos').createSignedUrl(profile['primary_photo_path'] as String, 3600); } catch (_) {}
       }
       return profile;
-    }).toList();
+    }));
   }
 
   Future<void> pass(String targetUserId) async {
