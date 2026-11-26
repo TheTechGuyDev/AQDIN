@@ -31,13 +31,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      _home(),
-      _discover(),
-      _matches(),
-      _messages(),
-      _profile(),
-    ];
+    final pages = [_home(), _discover(), _matches(), _messages(), _profile()];
     return Scaffold(
       body: SafeArea(child: IndexedStack(index: _tab, children: pages)),
       bottomNavigationBar: NavigationBar(
@@ -109,7 +103,7 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(child: Container(width: double.infinity, decoration: BoxDecoration(color: _pale, borderRadius: BorderRadius.circular(20)), child: const Center(child: Icon(Icons.person, size: 100, color: _green)))),
           const SizedBox(height: 17),
-          Row(children: [Expanded(child: Text('undefined, undefined', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: _ink))), const Icon(Icons.verified_user_outlined, color: _green)]),
+          Row(children: [Expanded(child: Text('${profile['name']}, ${profile['age']}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: _ink))), const Icon(Icons.verified_user_outlined, color: _green)]),
           const SizedBox(height: 4), Text(profile['city']!, style: const TextStyle(color: _muted)),
           const SizedBox(height: 10), Text(profile['about']!, style: const TextStyle(height: 1.4)),
           const SizedBox(height: 12), Chip(label: Text(profile['tag']!), backgroundColor: _pale, side: BorderSide.none),
@@ -118,8 +112,8 @@ class _DashboardPageState extends State<DashboardPage> {
       )),
       const SizedBox(height: 18),
       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-        _roundAction(Icons.close, 'Pass', Colors.grey, () { setState(() { _passed.add(profile['name']!); _discoverIndex++; }); }),
-        _roundAction(Icons.favorite_border, 'Like', _green, () { setState(() { _liked.add(profile['name']!); _discoverIndex++; }); }),
+        _roundAction(Icons.close, 'Pass', Colors.grey, () => setState(() { _passed.add(profile['name']!); _discoverIndex++; })),
+        _roundAction(Icons.favorite_border, 'Like', _green, () => setState(() { _liked.add(profile['name']!); _discoverIndex++; })),
         _roundAction(Icons.handshake_outlined, 'Introduce', _deep, () => _open('Request an introduction', subtitle: 'Review a profile and send a respectful introduction request.')),
       ]),
       const SizedBox(height: 20),
@@ -243,7 +237,7 @@ class FeaturePage extends StatelessWidget {
         Text(subtitle ?? 'This AQDIN feature is part of the product workspace.', style: const TextStyle(height: 1.5, color: _muted)),
       ])),
       const SizedBox(height: 18),
-      const Text('This section is being prepared. Account, privacy and safety controls will be connected to the secure backend before public launch.', style: TextStyle(height: 1.5)),
+      const Text('This section is a preview shell. Its data actions and security controls will be connected to the backend before public launch.', style: TextStyle(height: 1.5)),
     ]),
   );
 }
