@@ -7,7 +7,7 @@ void main() {
 
     expect(find.text('AQDIN'), findsOneWidget);
     expect(find.text('Find your person. Build your future.'), findsOneWidget);
-    expect(find.text('Get started'), findsOneWidget);
+    expect(find.text('Create an account'), findsOneWidget);
     expect(find.text('I already have an account'), findsOneWidget);
   });
 }
