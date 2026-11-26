@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/aqdin_repository.dart';
 
@@ -53,6 +54,21 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _uploadPhoto() async {
+    try {
+      final file = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85, maxWidth: 1800);
+      if (file == null) return;
+      setState(() { _saving = true; _error = null; });
+      final bytes = await file.readAsBytes();
+      final extension = file.name.contains('.') ? file.name.split('.').last : 'jpg';
+      await _repo.uploadProfilePhoto(bytes: bytes, fileExtension: extension);
+      await _load();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Photo uploaded. It will appear in discovery after moderation approval.')));
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Photo upload failed: $e');
+    } finally { if (mounted) setState(() => _saving = false); }
   }
 
   Future<void> _save() async {
@@ -131,6 +147,22 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 18),
+                OutlinedButton.icon(
+                  onPressed: _saving ? null : _uploadPhoto,
+                  icon: const Icon(Icons.add_a_photo_outlined),
+                  label: const Text('Add profile photo'),
+                ),
+                if ((_profile?['photos'] as List? ?? []).isNotEmpty)
+                  SizedBox(height: 112, child: ListView(scrollDirection: Axis.horizontal, children:
+                    (_profile!['photos'] as List).map((photo) {
+                      final url = photo['signed_url']?.toString() ?? '';
+                      return Padding(padding: const EdgeInsets.only(right: 9), child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: url.isEmpty ? Container(width: 90, color: const Color(0xFFEAF2EC), child: const Icon(Icons.image_not_supported))
+                          : Image.network(url, width: 90, height: 112, fit: BoxFit.cover),
+                      ));
+                    }).toList())),
                 const SizedBox(height: 22),
                 if (_editing) ...[
                   _field('Display name', _name),
