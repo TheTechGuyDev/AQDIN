@@ -12,8 +12,22 @@ class AqdinRepository {
     return id;
   }
 
-  Future<Map<String, dynamic>?> myProfile() =>
-      _client.from('user_profiles').select().eq('id', _uid).maybeSingle();
+  Future<Map<String, dynamic>?> myProfile() async {
+    final row = await _client.from('user_profiles').select().eq('id', _uid).maybeSingle();
+    if (row == null) return null;
+    final profile = Map<String, dynamic>.from(row);
+    final photos = await _client.from('profile_photos').select()
+      .eq('user_id', _uid).order('sort_order');
+    profile['photos'] = await Future.wait(photos.map((photo) async {
+      final item = Map<String, dynamic>.from(photo);
+      try {
+        item['signed_url'] = await _client.storage.from('profile-photos')
+          .createSignedUrl(item['storage_path'].toString(), 3600);
+      } catch (_) {}
+      return item;
+    }));
+    return profile;
+  }
 
   Future<void> saveMyProfile(Map<String, dynamic> values) async {
     const allowed = {
