@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'account_profile_page.dart';
 
 const _green = Color(0xFF176B55);
 const _deep = Color(0xFF07362A);
@@ -278,7 +279,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
       Padding(padding:const EdgeInsets.symmetric(horizontal:20),child:Container(padding:const EdgeInsets.all(18),decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(21),border:Border.all(color:_line)),child:Row(children:[
         Container(width:56,height:56,decoration:const BoxDecoration(shape:BoxShape.circle,color:Color(0xFFEAF1E9)),child:const Icon(Icons.person_outline,color:_green,size:30)),
         const SizedBox(width:13),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('Your AQDIN profile',style:TextStyle(fontSize:16,fontWeight:FontWeight.w800,color:_deep)),const SizedBox(height:3),Text(email,style:const TextStyle(fontSize:11,color:_muted))])),
-        IconButton(onPressed:()=>_open('Edit profile'),icon:const Icon(Icons.edit_outlined,color:_green)),
+        IconButton(onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AccountProfilePage())),icon:const Icon(Icons.edit_outlined,color:_green)),
       ]))),
       _sectionHeading('Your profile'),
       _simpleRows([
