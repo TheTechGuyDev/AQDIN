@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/aqdin_repository.dart';
 
 const _green = Color(0xFF176B55);
@@ -100,14 +101,12 @@ class _WaliManagementPageState extends State<WaliManagementPage> {
         leading: const Icon(Icons.family_restroom, color: _green),
         title: Text(r['relationship_label']?.toString() ?? 'Trusted representative'),
         subtitle: Text('Status: ${r['status']}'),
-        trailing: r['member_user_id'] == _repoUserId ? const SizedBox.shrink() : TextButton(
+        trailing: r['member_user_id'] != Supabase.instance.client.auth.currentUser?.id ? const SizedBox.shrink() : TextButton(
           onPressed: () async { await _repo.revokeWali(r['id'].toString()); await _load(); },
           child: const Text('Revoke')),
       ))),
     ]),
-  );
-  String get _repoUserId => '';
-}
+  );}
 
 class SafetyCenterPage extends StatefulWidget {
   const SafetyCenterPage({super.key});
