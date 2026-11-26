@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'account_profile_page.dart';
+import '../services/aqdin_repository.dart';
 
 const _green = Color(0xFF176B55);
 const _deep = Color(0xFF07362A);
@@ -31,23 +32,39 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   final Set<int> _saved = {};
   final Set<int> _passed = {};
 
-  static const _profiles = [
-    _Profile(name:'Amina',age:27,city:'Lagos, Nigeria',role:'Product Designer',online:true,verified:true,
-      about:'Grounded in faith, close to family and happiest when learning something new. I value kindness, honest communication and building a peaceful home.',
-      values:['Family-minded','Growth','Kindness'],photo:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1200&auto=format&fit=crop&q=85'),
-    _Profile(name:'Maryam',age:25,city:'Abuja, Nigeria',role:'Healthcare Professional',online:false,verified:true,
-      about:'A thoughtful person who enjoys volunteering, books and meaningful conversations. Looking for a sincere partnership built on respect.',
-      values:['Compassion','Service','Respect'],photo:'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=1200&auto=format&fit=crop&q=85'),
-    _Profile(name:'Zainab',age:29,city:'Ilorin, Nigeria',role:'Business Owner',online:true,verified:false,
-      about:'Ambitious but intentional about balance. I enjoy cooking for loved ones, exploring new places and growing together through every season.',
-      values:['Purpose','Family','Balance'],photo:'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=1200&auto=format&fit=crop&q=85'),
-    _Profile(name:'Hafsa',age:26,city:'Ibadan, Nigeria',role:'Architect',online:false,verified:true,
-      about:'I appreciate calm conversations, creative spaces and showing up for the people who matter. Hoping to build a home rooted in mercy.',
-      values:['Creativity','Mercy','Family'],photo:'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=1200&auto=format&fit=crop&q=85'),
-    _Profile(name:'Safiya',age:28,city:'Kano, Nigeria',role:'Entrepreneur',online:true,verified:true,
-      about:'Curious, warm and focused on meaningful growth. I value sincerity, mutual support and a marriage built with intention.',
-      values:['Sincerity','Purpose','Support'],photo:'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=1200&auto=format&fit=crop&q=85'),
-  ];
+  final AqdinRepository _repo = AqdinRepository();
+  List<_Profile> _profiles = [];
+  bool _loadingProfiles = true;
+  String? _profileError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfiles();
+    _repo.updatePresence();
+  }
+
+  Future<void> _loadProfiles() async {
+    try {
+      final rows = await _repo.discover();
+      final profiles = rows.map((row) {
+        final dob = DateTime.tryParse(row['date_of_birth']?.toString() ?? '');
+        var age = dob == null ? 0 : DateTime.now().year - dob.year;
+        if (dob != null && (DateTime.now().month < dob.month || (DateTime.now().month == dob.month && DateTime.now().day < dob.day))) age--;
+        final last = DateTime.tryParse(row['last_active_at']?.toString() ?? '');
+        final online = row['show_online'] == true && last != null && DateTime.now().difference(last).inMinutes < 5;
+        final interests = (row['profile_interests'] as List? ?? []).map((v) => v['interest'].toString()).toList();
+        return _Profile(id: row['id'].toString(), name: row['display_name']?.toString() ?? 'AQDIN member', age: age,
+          city: [row['city'], row['country_code']].where((v) => v != null && v.toString().isNotEmpty).join(', '),
+          role: row['occupation']?.toString() ?? 'Member', about: row['bio']?.toString() ?? 'Seeking a sincere, marriage-minded introduction.',
+          values: interests, photo: row['primary_photo_url']?.toString() ?? '', online: online, verified: false);
+      }).where((p) => p.age >= 18).toList();
+      if (mounted) setState(() { _profiles = profiles; _loadingProfiles = false; _cardIndex = 0; });
+    } catch (e) {
+      if (mounted) setState(() { _profileError = e.toString(); _loadingProfiles = false; });
+    }
+  }
+
 
   _Profile get _current => _profiles[_cardIndex % _profiles.length];
   String get _firstName => Supabase.instance.client.auth.currentUser?.email?.split('@').first ?? 'there';
@@ -59,9 +76,16 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
     MaterialPageRoute(builder: (_) => _MemberProfileDetail(profile: profile)));
 
   Future<void> _swipe(bool liked) async {
-    if (_busy) return;
+    if (_busy || _profiles.isEmpty) return;
     _busy = true;
     final index = _cardIndex;
+    try {
+      if (liked) { await _repo.like(_current.id); } else { await _repo.pass(_current.id); }
+    } catch (e) {
+      _busy = false;
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not save this action: $e')));
+      return;
+    }
     setState(() { _exitDirection = liked ? 1 : -1; _dragX = liked ? 520 : -520; });
     HapticFeedback.mediumImpact();
     SystemSound.play(liked ? SystemSoundType.alert : SystemSoundType.click);
@@ -71,7 +95,9 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
     setState(() { _cardIndex++; _dragX = 0; _dragY = 0; _exitDirection = 0; _busy = false; });
   }
 
-  void _save() {
+  Future<void> _save() async {
+    if (_profiles.isEmpty) return;
+    try { await _repo.saveProfile(_current.id); } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not save profile: $e'))); return; }
     setState(() => _saved.add(_cardIndex));
     HapticFeedback.selectionClick();
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Profile saved'),duration:Duration(milliseconds:900)));
@@ -137,7 +163,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
         return GestureDetector(onTap:()=>_openMember(p),child:ClipRRect(
           borderRadius:BorderRadius.circular(22),
           child:Stack(fit:StackFit.expand,children:[
-            Image.network(p.photo,fit:BoxFit.cover,errorBuilder:(_,__,___)=>Container(color:const Color(0xFFE7E1D8),child:const Icon(Icons.person,size:60,color:_green))),
+            p.photo.isNotEmpty ? Image.network(p.photo,fit:BoxFit.cover,errorBuilder:(_,__,___)=>Container(color:const Color(0xFFE7E1D8),child:const Icon(Icons.person,size:60,color:_green))) : Container(color:const Color(0xFFE7E1D8),child:const Icon(Icons.person,size:60,color:_green)),
             const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0xCC000000)],stops:[.45,1]))),
             Positioned(top:12,left:11,child:_presenceBadge(p.online)),
             Positioned(left:13,right:10,bottom:13,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
@@ -155,6 +181,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   ]);
 
   Widget _swipeDeck({bool showHeader=true}) {
+    if (_profiles.isEmpty) return Center(child: Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(_loadingProfiles ? Icons.people_outline : Icons.explore_off_outlined, size: 42, color: _green), const SizedBox(height: 12), Text(_loadingProfiles ? 'Finding members for you…' : 'No profiles to show yet', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _deep)), const SizedBox(height: 8), Text(_profileError ?? 'As more members complete their profiles, they will appear here. You can update your preferences or check back soon.', textAlign: TextAlign.center, style: const TextStyle(color: _muted)), if (_profileError != null) TextButton(onPressed: _loadProfiles, child: const Text('Try again'))])));
     final p=_current;
     return LayoutBuilder(builder:(context,constraints){
       return Padding(padding:const EdgeInsets.fromLTRB(14,0,14,0),child:Column(children:[
@@ -196,9 +223,9 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   Widget _fullPhotoCard(_Profile p)=>ClipRRect(
     borderRadius:BorderRadius.circular(30),
     child:Stack(fit:StackFit.expand,children:[
-      Image.network(p.photo,fit:BoxFit.cover,alignment:Alignment.topCenter,
+      p.photo.isNotEmpty ? Image.network(p.photo,fit:BoxFit.cover,alignment:Alignment.topCenter,
         loadingBuilder:(context,child,progress)=>progress==null?child:Container(color:const Color(0xFFE9E4DE),child:const Center(child:CircularProgressIndicator(color:_green,strokeWidth:2))),
-        errorBuilder:(_,__,___)=>Container(color:const Color(0xFFE7E1D8),child:const Center(child:Icon(Icons.person,color:_green,size:110)))),
+        errorBuilder:(_,__,___)=>Container(color:const Color(0xFFE7E1D8),child:const Center(child:Icon(Icons.person,color:_green,size:110)))) : Container(color:const Color(0xFFE7E1D8),child:const Center(child:Icon(Icons.person,color:_green,size:110))),
       const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,stops:[0,.35,.7,1],colors:[Color(0x55000000),Colors.transparent,Color(0x22000000),Color(0xE6000000)]))),
       Positioned(top:17,left:16,child:Container(padding:const EdgeInsets.symmetric(horizontal:11,vertical:7),decoration:BoxDecoration(color:Colors.black.withOpacity(.35),borderRadius:BorderRadius.circular(30)),child:Row(mainAxisSize:MainAxisSize.min,children:[const Icon(Icons.auto_awesome,color:_gold,size:13),const SizedBox(width:5),const Text('AQDIN INTRODUCTION',style:TextStyle(color:Colors.white,fontSize:9,fontWeight:FontWeight.w800,letterSpacing:1))]))),
       Positioned(top:17,right:15,child:Container(padding:const EdgeInsets.all(7),decoration:BoxDecoration(color:Colors.black.withOpacity(.35),shape:BoxShape.circle),child:const Icon(Icons.more_horiz,color:Colors.white))),
@@ -328,8 +355,8 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
 }
 
 class _Profile {
-  const _Profile({required this.name,required this.age,required this.city,required this.role,required this.about,required this.values,required this.photo,required this.online,required this.verified});
-  final String name,city,role,about,photo;
+  const _Profile({required this.id,required this.name,required this.age,required this.city,required this.role,required this.about,required this.values,required this.photo,required this.online,required this.verified});
+  final String id,name,city,role,about,photo;
   final int age;
   final List<String> values;
   final bool online,verified;
