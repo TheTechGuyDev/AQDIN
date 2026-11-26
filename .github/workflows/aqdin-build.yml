@@ -29,17 +29,25 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Generate platform projects
+        run: flutter create --platforms=android,ios,web --project-name aqdin --org com.aqdin .
+
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Generate AQDIN launch screen and app icons
+        run: |
+          dart run flutter_native_splash:create
+          dart run flutter_launcher_icons
 
       - name: Format Dart source
         run: dart format lib
 
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib
+
       - name: Run tests
         run: flutter test
-
-      - name: Generate Android and Web platform scaffolding
-        run: flutter create --platforms=android,web --project-name aqdin --org com.aqdin .
 
       - name: Build Android APK
         run: >-
