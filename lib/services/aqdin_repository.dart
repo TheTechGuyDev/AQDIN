@@ -31,7 +31,7 @@ class AqdinRepository {
   Future<List<Map<String, dynamic>>> discover({int limit = 30}) async {
     final rows = await _client
         .from('user_profiles')
-        .select('id,display_name,date_of_birth,country_code,city,bio,gender,marital_status,profile_photos(storage_path,is_primary,moderation_status),profile_interests(interest)')
+        .select('id,display_name,date_of_birth,country_code,city,bio,gender,marital_status,occupation,last_active_at,show_online,profile_photos(storage_path,is_primary,moderation_status),profile_interests(interest)')
         .eq('profile_visibility', 'members')
         .eq('onboarding_complete', true)
         .neq('id', _uid)
@@ -46,7 +46,7 @@ class AqdinRepository {
         .select('target_user_id').eq('actor_user_id', _uid);
     final seenIds = seen.map((row) => row['target_user_id'] as String).toSet();
 
-    return rows.where((row) {
+    return (await Future.wait(rows.map((row) async => Map<String, dynamic>.from(row)))).where((row) {
       final id = row['id'] as String;
       return !blockedIds.contains(id) && !seenIds.contains(id);
     }).map((row) {
@@ -57,8 +57,10 @@ class AqdinRepository {
       photos.sort((a, b) =>
           (b['is_primary'] == true ? 1 : 0)
               .compareTo(a['is_primary'] == true ? 1 : 0));
-      profile['primary_photo_path'] =
-          photos.isEmpty ? null : photos.first['storage_path'];
+      profile['primary_photo_path'] = photos.isEmpty ? null : photos.first['storage_path'];
+      if (profile['primary_photo_path'] != null) {
+        try { profile['primary_photo_url'] = await _client.storage.from('profile-photos').createSignedUrl(profile['primary_photo_path'] as String, 3600); } catch (_) {}
+      }
       return profile;
     }).toList();
   }
