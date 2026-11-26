@@ -1,8 +1,19 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
+import 'config/supabase_config.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (SupabaseConfig.isConfigured) {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.publishableKey,
+    );
+  }
+
   runApp(const AqdinApp());
 }
 
@@ -38,6 +49,8 @@ class AqdinWelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isConnected = SupabaseConfig.isConfigured;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -89,6 +102,28 @@ class AqdinWelcomePage extends StatelessWidget {
                 ),
               ),
               const Spacer(),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isConnected
+                      ? const Color(0xFFEAF4EE)
+                      : const Color(0xFFFFF3E3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  isConnected
+                      ? 'Backend configuration loaded'
+                      : 'Development mode: Supabase keys not supplied',
+                  style: TextStyle(
+                    color: isConnected
+                        ? const Color(0xFF176B55)
+                        : const Color(0xFF8A5A16),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 height: 54,
