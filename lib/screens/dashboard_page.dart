@@ -184,12 +184,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
             ),
           )))),
         ])),
-        Padding(padding:const EdgeInsets.fromLTRB(4,13,4,12),child:Row(mainAxisAlignment:MainAxisAlignment.spaceEvenly,children:[
-          _actionCircle(Icons.close_rounded,'Pass',const Color(0xFFE35F67),()=>_swipe(false),58),
-          _actionCircle(Icons.bookmark_rounded,'Save',_green,_save,48),
-          _actionCircle(Icons.favorite_rounded,'Like',_rose,()=>_swipe(true),66),
-          _actionCircle(Icons.handshake_rounded,'Intro',_gold,()=>_open('Request introduction',detail:'Send a respectful introduction request. Choose whether to involve a Wali.'),48),
-        ])),
+
       ]));
     });
   }
@@ -218,8 +213,20 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
         Wrap(spacing:6,children:p.values.map((v)=>Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:6),decoration:BoxDecoration(color:Colors.white.withOpacity(.2),borderRadius:BorderRadius.circular(20),border:Border.all(color:Colors.white24)),child:Text(v,style:const TextStyle(color:Colors.white,fontSize:10,fontWeight:FontWeight.w700)))).toList()),
         const SizedBox(height:4),
         const Text('Preview profile • Sample data',style:TextStyle(color:Colors.white60,fontSize:9)),
+        const SizedBox(height:10),
+        Row(mainAxisAlignment:MainAxisAlignment.spaceEvenly,children:[
+          _photoAction(Icons.close_rounded,const Color(0xFFE35F67),()=>_swipe(false),54),
+          _photoAction(_saved.contains(_cardIndex)?Icons.bookmark:Icons.bookmark_border,_gold,_save,46),
+          _photoAction(Icons.favorite_rounded,_rose,()=>_swipe(true),60),
+          _photoAction(Icons.handshake_rounded,_gold,()=>_open('Request introduction',detail:'Send a respectful introduction request and choose whether to involve a Wali.'),46),
+        ]),
       ])),
     ]),
+  );
+
+  Widget _photoAction(IconData icon,Color color,VoidCallback action,double size)=>Material(
+    elevation:5,color:Colors.white,shape:const CircleBorder(),
+    child:InkWell(customBorder:const CircleBorder(),onTap:action,child:SizedBox(width:size,height:size,child:Icon(icon,color:color,size:size*.5))),
   );
 
   Widget _presenceBadge(bool online)=>Container(
@@ -340,14 +347,14 @@ class _AqdinTabBar extends StatelessWidget {
     borderRadius:BorderRadius.circular(32),
     child:BackdropFilter(filter:ImageFilter.blur(sigmaX:24,sigmaY:24),child:Container(
       height:75,
-      decoration:BoxDecoration(color:const Color(0xFF111713).withOpacity(.92),borderRadius:BorderRadius.circular(32),border:Border.all(color:Colors.white.withOpacity(.18)),boxShadow:const [BoxShadow(color:Color(0x26000000),blurRadius:25,offset:Offset(0,7))]),
+      decoration:BoxDecoration(color:Colors.white.withOpacity(.72),borderRadius:BorderRadius.circular(32),border:Border.all(color:Colors.white.withOpacity(.18)),boxShadow:const [BoxShadow(color:Color(0x26000000),blurRadius:25,offset:Offset(0,7))]),
       child:Row(children:List.generate(_items.length,(index){
         final item=_items[index];final active=selected==index;
         return Expanded(child:GestureDetector(behavior:HitTestBehavior.opaque,onTap:()=>onSelect(index),child:AnimatedContainer(
-          duration:const Duration(milliseconds:220),margin:const EdgeInsets.all(5),decoration:BoxDecoration(color:active?Colors.white.withOpacity(.17):Colors.transparent,borderRadius:BorderRadius.circular(27)),
+          duration:const Duration(milliseconds:220),margin:const EdgeInsets.all(5),decoration:BoxDecoration(color:active?const Color(0xFFE5EFE8).withOpacity(.95):Colors.transparent,borderRadius:BorderRadius.circular(27)),
           child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[
-            Icon(active?item.$2:item.$1,color:active?Colors.white:const Color(0xFFB4BDB7),size:23),
-            const SizedBox(height:4),Text(item.$3,style:TextStyle(fontSize:10,fontWeight:active?FontWeight.w800:FontWeight.w600,color:active?Colors.white:const Color(0xFFB4BDB7))),
+            Icon(active?item.$2:item.$1,color:active?_green:const Color(0xFF78857D),size:23),
+            const SizedBox(height:4),Text(item.$3,style:TextStyle(fontSize:10,fontWeight:active?FontWeight.w800:FontWeight.w600,color:active?_deep:_muted)),
           ]),
         )));
       })),
@@ -355,15 +362,53 @@ class _AqdinTabBar extends StatelessWidget {
   ));
 }
 
-class FeaturePage extends StatelessWidget {
+class FeaturePage extends StatefulWidget {
   const FeaturePage({super.key,required this.title,this.subtitle});
   final String title;
   final String? subtitle;
-  @override
-  Widget build(BuildContext context)=>Scaffold(backgroundColor:_paper,appBar:AppBar(backgroundColor:_paper,foregroundColor:_deep,title:Text(title,style:const TextStyle(fontFamily:'serif',fontWeight:FontWeight.w700))),body:ListView(padding:const EdgeInsets.all(22),children:[
-    Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(color:const Color(0xFFEAF2EC),borderRadius:BorderRadius.circular(21)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-      const Icon(Icons.auto_awesome,color:_green,size:28),const SizedBox(height:13),Text(title,style:const TextStyle(fontFamily:'serif',fontSize:23,fontWeight:FontWeight.w700,color:_deep)),const SizedBox(height:8),Text(subtitle??'A considered part of your AQDIN marriage journey.',style:const TextStyle(color:_muted,height:1.5)),
-    ])),
-    const SizedBox(height:18),const Text('This section is being prepared. Account-specific actions will be connected to the secure AQDIN backend before launch.',style:TextStyle(color:_ink,height:1.55)),
-  ]));
+  @override State<FeaturePage> createState()=>_FeaturePageState();
+}
+class _FeaturePageState extends State<FeaturePage> {
+  final Map<String,bool> _toggles={};
+  final Set<String> _selected={};
+  final TextEditingController _note=TextEditingController();
+  @override void dispose(){_note.dispose();super.dispose();}
+  List<(String,IconData,bool)> _items(){
+    final t=widget.title.toLowerCase();
+    if(t.contains('filter')) return [('Verified profiles',Icons.verified_outlined,true),('Online members',Icons.circle,true),('Relocation considered',Icons.travel_explore,true),('Age range',Icons.cake_outlined,false),('Countries and cities',Icons.public,false),('Marital status',Icons.family_restroom,false),('Education and profession',Icons.school_outlined,false)];
+    if(t.contains('wali')||t.contains('family')) return [('Invite a Wali or trusted family member',Icons.person_add_alt_1,false),('Choose shared profile details',Icons.visibility_outlined,false),('Approve introductions together',Icons.handshake_outlined,true),('Meeting planner',Icons.event_outlined,false),('Review or revoke access',Icons.admin_panel_settings,false)];
+    if(t.contains('privacy')) return [('Profile visible in discovery',Icons.visibility_outlined,true),('Show online status',Icons.circle,true),('Show distance',Icons.location_on_outlined,true),('Allow introduction requests',Icons.handshake_outlined,true),('Pause discovery',Icons.pause_circle_outline,true)];
+    if(t.contains('faith')||t.contains('value')) return [('Prayer and faith practices',Icons.mosque_outlined,false),('Values important to me',Icons.favorite_border,false),('Tradition or school (optional)',Icons.menu_book_outlined,false),('Marriage hopes and expectations',Icons.home_outlined,false)];
+    if(t.contains('marriage')||t.contains('compatibility')) return [('Preferred age range',Icons.cake_outlined,false),('Location and relocation',Icons.public,false),('Family and children',Icons.family_restroom,false),('Education and career',Icons.school_outlined,false),('Living arrangements',Icons.home_outlined,false),('Marriage timeline',Icons.event_outlined,false),('Important deal-breakers',Icons.rule_outlined,false)];
+    if(t.contains('verification')) return [('Email and phone verification',Icons.phone_android,false),('Selfie and liveness check',Icons.face_retouching_natural,false),('Identity document verification',Icons.badge_outlined,false),('Verification status and appeal',Icons.fact_check_outlined,false)];
+    if(t.contains('notification')) return [('Likes and matches',Icons.favorite_border,true),('New messages',Icons.chat_bubble_outline,true),('Introduction updates',Icons.handshake_outlined,true),('Wali activity',Icons.family_restroom,true),('Product announcements',Icons.campaign_outlined,true)];
+    if(t.contains('security')) return [('Two-step verification',Icons.security,true),('Active sessions and devices',Icons.devices,false),('Change password',Icons.lock_outline,false),('Sign out other devices',Icons.logout,false)];
+    if(t.contains('photo')||t.contains('media')) return [('Add profile photos',Icons.add_a_photo_outlined,false),('Reorder photos',Icons.swap_vert,false),('Choose primary photo',Icons.star_border,false),('Optional audio or video introduction',Icons.mic_none,false)];
+    if(t.contains('language')) return [('App language',Icons.language,false),('Arabic right-to-left layout',Icons.format_textdirection_r_to_l,true),('Text size and accessibility',Icons.accessibility_new,false)];
+    if(t.contains('safety')||t.contains('block')) return [('Report a member',Icons.flag_outlined,false),('Block a member',Icons.block_outlined,false),('Manage blocked accounts',Icons.person_off_outlined,false),('Read safety guidance',Icons.shield_outlined,false)];
+    if(t.contains('message')||t.contains('chat')) return [('Message request permissions',Icons.mark_chat_unread_outlined,false),('Read receipts',Icons.done_all,true),('Typing indicators',Icons.more_horiz,true),('Archived conversations',Icons.archive_outlined,false),('Muted conversations',Icons.notifications_off_outlined,false)];
+    if(t.contains('introduction')||t.contains('request')) return [('Send an introduction request',Icons.send_outlined,false),('Include a Wali',Icons.family_restroom,true),('Suggest a family meeting',Icons.event_outlined,false),('Add a personal note',Icons.edit_outlined,false)];
+    if(t.contains('terms')||t.contains('help')||t.contains('support')) return [('Frequently asked questions',Icons.help_outline,false),('Contact support',Icons.support_agent,false),('Privacy and data rights',Icons.privacy_tip_outlined,false),('Community guidelines',Icons.groups_outlined,false)];
+    if(t.contains('settings')) return [('Account and login',Icons.manage_accounts_outlined,false),('Privacy controls',Icons.lock_outline,false),('Notifications',Icons.notifications_none,false),('Language and accessibility',Icons.language,false),('Safety centre',Icons.health_and_safety_outlined,false),('Help and support',Icons.support_agent,false)];
+    return [('Shared values and priorities',Icons.favorite_border,false),('Topics to discuss before marriage',Icons.forum_outlined,false),('Family expectations',Icons.family_restroom,false),('Life goals and plans',Icons.flag_outlined,false),('Personal notes',Icons.edit_outlined,false)];
+  }
+  @override Widget build(BuildContext context)=>Scaffold(
+    backgroundColor:const Color(0xFFF7F8F5),
+    appBar:AppBar(backgroundColor:const Color(0xFFF7F8F5),foregroundColor:const Color(0xFF07362A),title:Text(widget.title,style:const TextStyle(fontFamily:'serif',fontWeight:FontWeight.w700))),
+    body:ListView(padding:const EdgeInsets.fromLTRB(19,8,19,30),children:[
+      if(widget.subtitle!=null&&widget.subtitle!.isNotEmpty) Container(padding:const EdgeInsets.all(17),decoration:BoxDecoration(color:const Color(0xFFEAF2EC),borderRadius:BorderRadius.circular(18)),child:Text(widget.subtitle!,style:const TextStyle(color:Color(0xFF75817A),height:1.5))),
+      const SizedBox(height:12),
+      ..._items().map((e)=>Container(margin:const EdgeInsets.only(bottom:9),padding:const EdgeInsets.symmetric(horizontal:13,vertical:5),decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(15),border:Border.all(color:const Color(0xFFE7ECE7))),child:Row(children:[
+        Container(width:38,height:38,decoration:BoxDecoration(color:const Color(0xFFEAF2EC),borderRadius:BorderRadius.circular(11)),child:Icon(e.$2,color:const Color(0xFF176B55),size:19)),
+        const SizedBox(width:11),Expanded(child:Text(e.$1,style:const TextStyle(color:Color(0xFF17211D),fontWeight:FontWeight.w600,fontSize:13))),
+        if(e.$3) Switch(value:_toggles[e.$1]??true,activeColor:const Color(0xFF176B55),onChanged:(v)=>setState(()=>_toggles[e.$1]=v))
+        else IconButton(onPressed:()=>setState(()=>_selected.add(e.$1)),icon:Icon(_selected.contains(e.$1)?Icons.check_circle:Icons.chevron_right,color:_selected.contains(e.$1)?const Color(0xFF176B55):const Color(0xFF75817A))),
+      ]))),
+      if(widget.title.toLowerCase().contains('edit')||widget.title.toLowerCase().contains('personal')||widget.title.toLowerCase().contains('request')||widget.title.toLowerCase().contains('support')) ...[
+        const SizedBox(height:8),TextField(controller:_note,minLines:2,maxLines:4,decoration:InputDecoration(labelText:'Your note',hintText:'Write here',filled:true,fillColor:Colors.white,border:OutlineInputBorder(borderRadius:BorderRadius.circular(14)))),
+      ],
+      const SizedBox(height:18),
+      SizedBox(height:52,child:FilledButton(onPressed:()=>ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Saved in this preview. Secure account sync will be connected before launch.'))),style:FilledButton.styleFrom(backgroundColor:const Color(0xFF176B55)),child:const Text('Save changes'))),
+    ]),
+  );
 }
