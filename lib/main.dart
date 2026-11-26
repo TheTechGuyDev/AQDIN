@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -25,7 +26,6 @@ class AqdinApp extends StatelessWidget {
     title: 'AQDIN', debugShowCheckedModeBanner: false,
     theme: ThemeData(
       useMaterial3: true,
-      fontFamily: 'AqdinSans',
       colorScheme: ColorScheme.fromSeed(seedColor: aqdinGreen),
       scaffoldBackgroundColor: const Color(0xFFF8F9F6),
       appBarTheme: const AppBarTheme(backgroundColor: Color(0xFFF8F9F6), foregroundColor: aqdinDeepGreen),
@@ -35,7 +35,40 @@ class AqdinApp extends StatelessWidget {
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE3EAE5))),
       ),
     ),
-    home: const AqdinRoot(),
+    home: const AqdinLaunchPage(),
+  );
+}
+
+class AqdinLaunchPage extends StatefulWidget {
+  const AqdinLaunchPage({super.key});
+  @override
+  State<AqdinLaunchPage> createState() => _AqdinLaunchPageState();
+}
+class _AqdinLaunchPageState extends State<AqdinLaunchPage> {
+  bool _finished = false;
+  @override
+  void initState() {
+    super.initState();
+    Timer(const Duration(milliseconds: 1400), () {
+      if (mounted) setState(() => _finished = true);
+    });
+  }
+  @override
+  Widget build(BuildContext context) => _finished ? const AqdinRoot() : const AqdinSplashScreen();
+}
+
+class AqdinSplashScreen extends StatelessWidget {
+  const AqdinSplashScreen({super.key});
+  @override
+  Widget build(BuildContext context) => const Scaffold(
+    backgroundColor: aqdinDeepGreen,
+    body: Center(
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        AqdinLogo(light: true, markSize: 150),
+        SizedBox(height: 34),
+        SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: aqdinGold)),
+      ]),
+    ),
   );
 }
 
@@ -76,8 +109,8 @@ class AqdinLogo extends StatelessWidget {
       SvgPicture.asset('assets/branding/aqdin_mark.svg', width: markSize, height: markSize),
       const SizedBox(height: 7),
       Text('AQDIN', style: TextStyle(
-        fontFamily: 'AqdinSerif', fontWeight: FontWeight.w700, fontSize: 36,
-        letterSpacing: 1.6, color: light ? const Color(0xFFF8EBC8) : aqdinDeepGreen,
+        fontFamily: 'serif', fontWeight: FontWeight.w700, fontSize: 36,
+        letterSpacing: 1.8, color: light ? const Color(0xFFF8EBC8) : aqdinDeepGreen,
       )),
       if (showDescriptor) ...[
         const SizedBox(height: 3),
@@ -115,7 +148,7 @@ class AqdinWelcomePage extends StatelessWidget {
                     const SizedBox(height: 30),
                     const Text('Find your person.\nBuild your future.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontFamily: 'AqdinSerif', fontSize: 30, height: 1.25, fontWeight: FontWeight.w700, color: Colors.white)),
+                      style: TextStyle(fontFamily: 'serif', fontSize: 30, height: 1.25, fontWeight: FontWeight.w700, color: Colors.white)),
                     const SizedBox(height: 14),
                     const Text('A thoughtful space for Muslims seeking marriage, built around intention, compatibility, and trust.',
                       textAlign: TextAlign.center,
