@@ -150,7 +150,7 @@ class AqdinWelcomePage extends StatelessWidget {
                         children: [
                           const AqdinLogo(light: true, markSize: 96),
                           const SizedBox(height: 22),
-                          const Text('Find your person.\\nBuild your future.',
+                          const Text('Find your person.\nBuild your future.',
                             textAlign: TextAlign.center,
                             style: TextStyle(fontFamily: 'serif', fontSize: 29, height: 1.2, fontWeight: FontWeight.w700, color: Colors.white)),
                           const SizedBox(height: 12),
@@ -165,9 +165,9 @@ class AqdinWelcomePage extends StatelessWidget {
                       child: Column(
                         children: [
                           Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: const [
-                            _WelcomeBenefit(icon: Icons.verified_user_outlined, label: 'Safer\\nintroductions'),
-                            _WelcomeBenefit(icon: Icons.favorite_border, label: 'Serious\\nintentions'),
-                            _WelcomeBenefit(icon: Icons.family_restroom, label: 'Family\\ninvolvement'),
+                            _WelcomeBenefit(icon: Icons.verified_user_outlined, label: 'Safer\nintroductions'),
+                            _WelcomeBenefit(icon: Icons.favorite_border, label: 'Serious\nintentions'),
+                            _WelcomeBenefit(icon: Icons.family_restroom, label: 'Family\ninvolvement'),
                           ]),
                           const SizedBox(height: 20),
                           Container(width: double.infinity, padding: const EdgeInsets.all(12),
