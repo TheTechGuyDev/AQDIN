@@ -32,6 +32,9 @@ jobs:
       - name: Generate platform projects
         run: flutter create --platforms=android,ios,web --project-name aqdin --org com.aqdin .
 
+      - name: Generate AQDIN web app icons and manifest
+        run: python3 tool/prepare_web_branding.py
+
       - name: Install dependencies
         run: flutter pub get
 
