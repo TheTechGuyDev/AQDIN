@@ -60,7 +60,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
     final index = _cardIndex;
     setState(() { _exitDirection = liked ? 1 : -1; _dragX = liked ? 520 : -520; });
     HapticFeedback.mediumImpact();
-    SystemSound.play(SystemSoundType.click);
+    SystemSound.play(liked ? SystemSoundType.alert : SystemSoundType.click);
     if (liked) { _liked.add(index); } else { _passed.add(index); }
     await Future.delayed(const Duration(milliseconds: 310));
     if (!mounted) return;
