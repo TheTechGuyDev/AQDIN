@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'account_profile_page.dart';
 import '../services/aqdin_repository.dart';
+import 'member_tools_pages.dart';
 
 const _green = Color(0xFF176B55);
 const _deep = Color(0xFF07362A);
@@ -69,8 +70,19 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   _Profile get _current => _profiles[_cardIndex % _profiles.length];
   String get _firstName => Supabase.instance.client.auth.currentUser?.email?.split('@').first ?? 'there';
 
-  void _open(String title, {String? detail}) => Navigator.of(context).push(
-    MaterialPageRoute(builder: (_) => FeaturePage(title:title,subtitle:detail)));
+  void _open(String title, {String? detail}) {
+    final key = title.toLowerCase();
+    final Widget page = key.contains('wali') || key.contains('family')
+      ? const WaliManagementPage()
+      : key.contains('marriage preferences')
+        ? const MarriagePreferencesPage()
+        : key.contains('safety') || key.contains('blocked')
+          ? const SafetyCenterPage()
+          : key.contains('notification')
+            ? const NotificationsPage()
+            : FeaturePage(title:title,subtitle:detail);
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+  }
 
   void _openMember(_Profile profile) => Navigator.of(context).push(
     MaterialPageRoute(builder: (_) => _MemberProfileDetail(profile: profile)));
