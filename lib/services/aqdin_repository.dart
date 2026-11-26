@@ -8,7 +8,7 @@ class AqdinRepository {
   final SupabaseClient _client;
   String get _uid {
     final id = _client.auth.currentUser?.id;
-    if (id == null) throw const AuthException('Sign in to continue.');
+    if (id == null) throw AuthException('Sign in to continue.');
     return id;
   }
 
