@@ -55,6 +55,9 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   void _open(String title, {String? detail}) => Navigator.of(context).push(
     MaterialPageRoute(builder: (_) => FeaturePage(title:title,subtitle:detail)));
 
+  void _openMember(_Profile profile) => Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => _MemberProfileDetail(profile: profile)));
+
   Future<void> _swipe(bool liked) async {
     if (_busy) return;
     _busy = true;
@@ -131,7 +134,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
       itemCount:_profiles.length,
       itemBuilder:(context,index){
         final p=_profiles[index];
-        return GestureDetector(onTap:()=>_open('${p.name}, ${p.age}',detail:p.about),child:ClipRRect(
+        return GestureDetector(onTap:()=>_openMember(p),child:ClipRRect(
           borderRadius:BorderRadius.circular(22),
           child:Stack(fit:StackFit.expand,children:[
             Image.network(p.photo,fit:BoxFit.cover,errorBuilder:(_,__,___)=>Container(color:const Color(0xFFE7E1D8),child:const Icon(Icons.person,size:60,color:_green))),
@@ -162,7 +165,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
             onPanStart:(_)=>HapticFeedback.selectionClick(),
             onPanUpdate:(d){if(!_busy)setState(() { _dragX+=d.delta.dx; _dragY+=d.delta.dy; });},
             onPanEnd:(d){if(_dragX>105){_swipe(true);}else if(_dragX < -105){_swipe(false);}else{setState(() { _dragX=0; _dragY=0; });}},
-            onTap:()=>_open('${p.name} • Profile',detail:p.about),
+            onTap:()=>_openMember(p),
             child:Transform.translate(offset:Offset(_dragX,_dragY*.18),child:Transform.rotate(
               angle:(_dragX/900).clamp(-.22,.22),
               child:_fullPhotoCard(p),
@@ -410,6 +413,125 @@ class _FeaturePageState extends State<FeaturePage> {
       ],
       const SizedBox(height:18),
       SizedBox(height:52,child:FilledButton(onPressed:()=>ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Saved in this preview. Secure account sync will be connected before launch.'))),style:FilledButton.styleFrom(backgroundColor:const Color(0xFF176B55)),child:const Text('Save changes'))),
+    ]),
+  );
+}
+
+
+class _MemberProfileDetail extends StatelessWidget {
+  const _MemberProfileDetail({required this.profile});
+  final _Profile profile;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: _paper,
+    body: CustomScrollView(slivers: [
+      SliverAppBar(
+        pinned: true,
+        expandedHeight: 490,
+        backgroundColor: _paper,
+        foregroundColor: _deep,
+        title: Text('${profile.name}, ${profile.age}',
+            style: const TextStyle(fontWeight: FontWeight.w800)),
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(fit: StackFit.expand, children: [
+            Image.network(profile.photo, fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                    color: const Color(0xFFE7E1D8),
+                    child: const Icon(Icons.person, size: 100, color: _green))),
+            const DecoratedBox(decoration: BoxDecoration(
+              gradient: LinearGradient(begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.black26, Colors.transparent, Color(0xDD000000)],
+                stops: [0, .48, 1]))),
+            Positioned(left: 22, right: 22, bottom: 28, child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Flexible(child: Text('${profile.name}, ${profile.age}',
+                    style: const TextStyle(color: Colors.white, fontSize: 30,
+                      fontWeight: FontWeight.w900))),
+                  if (profile.verified) ...[
+                    const SizedBox(width: 7),
+                    const Icon(Icons.verified_rounded, color: Color(0xFF9DE2BB))
+                  ]
+                ]),
+                const SizedBox(height: 7),
+                Text(profile.city.toUpperCase(),
+                  style: const TextStyle(color: Colors.white70,
+                    letterSpacing: 1.2, fontSize: 11, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                _presenceBadge(profile.online),
+              ])),
+          ]),
+        ),
+      ),
+      SliverToBoxAdapter(child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(width: double.infinity, padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(color: const Color(0xFFEAF2EC),
+              borderRadius: BorderRadius.circular(20)),
+            child: Text(profile.about, style: const TextStyle(
+              fontSize: 16, height: 1.55, color: Color(0xFF718078)))),
+          const SizedBox(height: 22),
+          const Text('About', style: TextStyle(fontSize: 19,
+            fontWeight: FontWeight.w800, color: _deep)),
+          const SizedBox(height: 8),
+          Text(profile.role, style: const TextStyle(color: _muted, fontSize: 14)),
+          const SizedBox(height: 22),
+          const Text('Shared values and priorities', style: TextStyle(
+            fontSize: 19, fontWeight: FontWeight.w800, color: _deep)),
+          const SizedBox(height: 12),
+          Wrap(spacing: 8, runSpacing: 8, children: profile.values.map((value) =>
+            Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: _line)),
+              child: Text(value, style: const TextStyle(color: _green,
+                fontWeight: FontWeight.w700)))).toList()),
+          const SizedBox(height: 22),
+          _detailRow(Icons.favorite_border, 'Shared values and priorities'),
+          _detailRow(Icons.forum_outlined, 'Topics to discuss before marriage'),
+          _detailRow(Icons.family_restroom, 'Family expectations'),
+          _detailRow(Icons.flag_outlined, 'Life goals and plans'),
+          _detailRow(Icons.edit_note, 'Personal notes'),
+          const SizedBox(height: 12),
+          const Text('AQDIN introduction', style: TextStyle(color: _muted,
+            fontSize: 12, height: 1.5)),
+        ]),
+      )),
+    ]),
+    bottomNavigationBar: SafeArea(child: Padding(
+      padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+      child: Row(children: [
+        Expanded(child: OutlinedButton.icon(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.close_rounded), label: const Text('Pass'))),
+        const SizedBox(width: 9),
+        Expanded(child: FilledButton.icon(
+          style: FilledButton.styleFrom(backgroundColor: _green),
+          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Like this profile from the Home swipe deck.'))),
+          icon: const Icon(Icons.favorite), label: const Text('Like')),
+        ),
+      ]),
+    )),
+  );
+
+  Widget _detailRow(IconData icon, String title) => Container(
+    margin: const EdgeInsets.only(bottom: 9),
+    padding: const EdgeInsets.all(15),
+    decoration: BoxDecoration(color: Colors.white,
+      borderRadius: BorderRadius.circular(16), border: Border.all(color: _line)),
+    child: Row(children: [
+      Container(width: 42, height: 42,
+        decoration: BoxDecoration(color: const Color(0xFFEAF2EC),
+          borderRadius: BorderRadius.circular(13)),
+        child: Icon(icon, color: _green)),
+      const SizedBox(width: 12),
+      Expanded(child: Text(title, style: const TextStyle(
+        fontWeight: FontWeight.w700, color: _ink))),
+      const Icon(Icons.chevron_right, color: _muted),
     ]),
   );
 }
