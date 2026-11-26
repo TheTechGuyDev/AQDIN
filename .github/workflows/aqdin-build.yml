@@ -38,6 +38,9 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      - name: Generate Android and Web platform scaffolding
+        run: flutter create --platforms=android,web --project-name aqdin --org com.aqdin .
+
       - name: Build Android APK
         run: >-
           flutter build apk --release
