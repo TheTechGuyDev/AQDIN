@@ -174,3 +174,101 @@ class _NotificationsPageState extends State<NotificationsPage> {
       }),
   );
 }
+
+
+class VerificationPage extends StatefulWidget {
+  const VerificationPage({super.key});
+  @override State<VerificationPage> createState() => _VerificationPageState();
+}
+class _VerificationPageState extends State<VerificationPage> {
+  final _repo = AqdinRepository();
+  List<Map<String,dynamic>> _records = [];
+  bool _loading = true;
+  String? _error;
+  @override void initState() { super.initState(); _load(); }
+  Future<void> _load() async {
+    try { _records = await _repo.myVerificationRecords(); }
+    catch(e) { _error = e.toString(); }
+    finally { if(mounted) setState(() => _loading = false); }
+  }
+  Future<void> _request(String type) async {
+    try {
+      await _repo.requestVerification(type);
+      await _load();
+      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Verification request recorded. It is not a verified badge.')));
+    } catch(e) { if(mounted) setState(() => _error = e.toString()); }
+  }
+  @override Widget build(BuildContext context) => Scaffold(
+    backgroundColor: _paper, appBar: AppBar(title: const Text('Verification')),
+    body: ListView(padding: const EdgeInsets.all(20), children: [
+      Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFFEAF2EC), borderRadius: BorderRadius.circular(18)),
+        child: const Text('Verification badges will only describe checks actually completed by an approved provider. A pending request does not mean your identity has been verified.', style: TextStyle(height: 1.5, color: _deep))),
+      const SizedBox(height: 16),
+      FilledButton.icon(onPressed: () => _request('selfie'), icon: const Icon(Icons.face_retouching_natural), label: const Text('Request selfie verification'), style: FilledButton.styleFrom(backgroundColor: _green)),
+      const SizedBox(height: 8),
+      OutlinedButton.icon(onPressed: () => _request('identity'), icon: const Icon(Icons.badge_outlined), label: const Text('Request identity verification')),
+      const SizedBox(height: 20), const Text('Verification history', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _deep)),
+      if(_loading) const Center(child: CircularProgressIndicator(color: _green)),
+      if(!_loading && _records.isEmpty) const Padding(padding: EdgeInsets.all(16), child: Text('No verification requests yet.')),
+      ..._records.map((r) => Card(color: Colors.white, child: ListTile(
+        leading: const Icon(Icons.verified_user_outlined, color: _green),
+        title: Text(r['verification_type'].toString().toUpperCase()),
+        subtitle: Text('Status: ${r['status']} • Requested ${r['created_at'].toString().split('T').first}'),
+      ))),
+      if(_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
+      const SizedBox(height: 12),
+      const Text('Live selfie/ID checks require AQDIN to configure a verification provider and its secure server-side credentials before launch.', style: TextStyle(color: Colors.black54, height: 1.5, fontSize: 12)),
+    ]),
+  );
+}
+
+class ChatPage extends StatefulWidget {
+  const ChatPage({super.key, required this.conversationId, required this.title});
+  final String conversationId;
+  final String title;
+  @override State<ChatPage> createState() => _ChatPageState();
+}
+class _ChatPageState extends State<ChatPage> {
+  final _repo = AqdinRepository();
+  final _controller = TextEditingController();
+  bool _sending = false;
+  @override void dispose() { _controller.dispose(); super.dispose(); }
+  Future<void> _send() async {
+    final body = _controller.text.trim();
+    if(body.isEmpty || _sending) return;
+    setState(() => _sending = true);
+    try { await _repo.sendMessage(widget.conversationId, body); _controller.clear(); }
+    catch(e) { if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Message not sent: $e'))); }
+    finally { if(mounted) setState(() => _sending = false); }
+  }
+  @override Widget build(BuildContext context) => Scaffold(
+    backgroundColor: _paper,
+    appBar: AppBar(title: Text(widget.title)),
+    body: Column(children: [
+      Expanded(child: StreamBuilder<List<Map<String,dynamic>>>(
+        stream: _repo.watchMessages(widget.conversationId),
+        builder: (context,snapshot) {
+          if(snapshot.hasError) return Center(child: Text('Could not load messages: ${snapshot.error}'));
+          if(!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: _green));
+          final rows = snapshot.data!;
+          if(rows.isEmpty) return const Center(child: Text('Start with a respectful introduction.'));
+          return ListView.builder(reverse: false, padding: const EdgeInsets.all(16), itemCount: rows.length, itemBuilder: (context,i) {
+            final row = rows[i];
+            final mine = row['sender_user_id'] == Supabase.instance.client.auth.currentUser?.id;
+            return Align(alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+              child: Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                constraints: const BoxConstraints(maxWidth: 290),
+                decoration: BoxDecoration(color: mine ? const Color(0xFFDCEDE3) : Colors.white, borderRadius: BorderRadius.circular(17)),
+                child: Text(row['body']?.toString() ?? '', style: const TextStyle(height: 1.4))),
+            );
+          });
+        },
+      )),
+      SafeArea(top: false, child: Padding(padding: const EdgeInsets.fromLTRB(12,8,12,12), child: Row(children: [
+        Expanded(child: TextField(controller: _controller, minLines: 1, maxLines: 4, decoration: const InputDecoration(hintText: 'Write a message', filled: true, fillColor: Colors.white))),
+        const SizedBox(width: 8),
+        IconButton.filled(onPressed: _sending ? null : _send, style: IconButton.styleFrom(backgroundColor: _green), icon: const Icon(Icons.send_rounded)),
+      ]))),
+    ]),
+  );
+}
