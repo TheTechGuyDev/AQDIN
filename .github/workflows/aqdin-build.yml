@@ -38,7 +38,6 @@ jobs:
       - name: Generate AQDIN launch screen and app icons
         run: |
           dart run flutter_native_splash:create
-          dart run flutter_launcher_icons
 
       - name: Format Dart source
         run: dart format lib
