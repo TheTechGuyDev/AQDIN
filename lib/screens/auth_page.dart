@@ -119,7 +119,7 @@ class _AuthPageState extends State<AuthPage> {
             TextFormField(controller: _email, enabled: !_busy, keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
               decoration: const InputDecoration(hintText: 'you@example.com', prefixIcon: Icon(Icons.mail_outline)),
-              validator: (v) => RegExp(r'^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$').hasMatch((v ?? '').trim()) ? null : 'Enter a valid email address'),
+              validator: (v) => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch((v ?? '').trim()) ? null : 'Enter a valid email address'),
             if (!_login || !_useEmailCode) ...[
               const SizedBox(height: 18),
               const Text('Password', style: TextStyle(fontWeight: FontWeight.w600)),
