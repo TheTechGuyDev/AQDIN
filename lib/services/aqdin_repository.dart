@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Typed access to AQDIN member data. Queries are protected by Supabase RLS.
@@ -295,7 +296,7 @@ class AqdinRepository {
       _client.from('user_settings').select().eq('user_id', _uid).maybeSingle();
 
   Future<String> uploadProfilePhoto({
-    required List<int> bytes,
+    required Uint8List bytes,
     required String fileExtension,
   }) async {
     final safeExtension = fileExtension.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
