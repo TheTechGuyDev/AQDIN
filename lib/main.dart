@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
 import 'screens/auth_page.dart';
 import 'screens/dashboard_page.dart';
 import 'screens/profile_setup_page.dart';
+
+const aqdinGreen = Color(0xFF176B55);
+const aqdinDeepGreen = Color(0xFF07362A);
+const aqdinGold = Color(0xFFDDBB69);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,9 +23,20 @@ class AqdinApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'AQDIN', debugShowCheckedModeBanner: false,
-    theme: ThemeData(useMaterial3: true, colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF176B55)), scaffoldBackgroundColor: const Color(0xFFF8F9F7),
-      inputDecorationTheme: InputDecorationTheme(filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
-    home: const AqdinRoot());
+    theme: ThemeData(
+      useMaterial3: true,
+      fontFamily: 'AqdinSans',
+      colorScheme: ColorScheme.fromSeed(seedColor: aqdinGreen),
+      scaffoldBackgroundColor: const Color(0xFFF8F9F6),
+      appBarTheme: const AppBarTheme(backgroundColor: Color(0xFFF8F9F6), foregroundColor: aqdinDeepGreen),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true, fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE3EAE5))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE3EAE5))),
+      ),
+    ),
+    home: const AqdinRoot(),
+  );
 }
 
 class AqdinRoot extends StatelessWidget {
@@ -28,17 +44,50 @@ class AqdinRoot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!SupabaseConfig.isConfigured) return const AqdinWelcomePage();
-    return StreamBuilder<AuthState>(stream: Supabase.instance.client.auth.onAuthStateChange, builder: (context, snapshot) {
-      final session = Supabase.instance.client.auth.currentSession;
-      if (session == null) return const AqdinWelcomePage();
-      return FutureBuilder(future: Supabase.instance.client.from('user_profiles').select('onboarding_complete').eq('id', session.user.id).maybeSingle(),
-        builder: (context, profile) {
-          if (profile.connectionState != ConnectionState.done) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-          if (profile.hasError) return const ProfileSetupPage();
-          return profile.data?['onboarding_complete'] == true ? const DashboardPage() : const ProfileSetupPage();
-        });
-    });
+    return StreamBuilder<AuthState>(
+      stream: Supabase.instance.client.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        final session = Supabase.instance.client.auth.currentSession;
+        if (session == null) return const AqdinWelcomePage();
+        return FutureBuilder(
+          future: Supabase.instance.client.from('user_profiles').select('onboarding_complete').eq('id', session.user.id).maybeSingle(),
+          builder: (context, profile) {
+            if (profile.connectionState != ConnectionState.done) {
+              return const Scaffold(body: Center(child: CircularProgressIndicator(color: aqdinGreen)));
+            }
+            if (profile.hasError) return const ProfileSetupPage();
+            return profile.data?['onboarding_complete'] == true ? const DashboardPage() : const ProfileSetupPage();
+          },
+        );
+      },
+    );
   }
+}
+
+class AqdinLogo extends StatelessWidget {
+  const AqdinLogo({super.key, this.light = false, this.markSize = 76, this.showDescriptor = true});
+  final bool light;
+  final double markSize;
+  final bool showDescriptor;
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      SvgPicture.asset('assets/branding/aqdin_mark.svg', width: markSize, height: markSize),
+      const SizedBox(height: 7),
+      Text('AQDIN', style: TextStyle(
+        fontFamily: 'AqdinSerif', fontWeight: FontWeight.w700, fontSize: 36,
+        letterSpacing: 1.6, color: light ? const Color(0xFFF8EBC8) : aqdinDeepGreen,
+      )),
+      if (showDescriptor) ...[
+        const SizedBox(height: 3),
+        Text('M U S L I M   M A T R I M O N I A L', style: TextStyle(
+          fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: 1.3,
+          color: light ? aqdinGold : aqdinGreen,
+        )),
+      ],
+    ],
+  );
 }
 
 class AqdinWelcomePage extends StatelessWidget {
@@ -46,27 +95,85 @@ class AqdinWelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ready = SupabaseConfig.isConfigured;
-    return Scaffold(body: SafeArea(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Spacer(),
-        Container(width: 64, height: 64, decoration: BoxDecoration(color: const Color(0xFFE4F0EA), borderRadius: BorderRadius.circular(20)),
-          child: const Icon(Icons.favorite_rounded, color: Color(0xFF176B55), size: 36)),
-        const SizedBox(height: 28),
-        const Text('AQDIN', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w800, letterSpacing: 2.2, color: Color(0xFF17211D))),
-        const SizedBox(height: 12),
-        const Text('Find your person. Build your future.', style: TextStyle(fontSize: 25, height: 1.2, fontWeight: FontWeight.w700, color: Color(0xFF25352E))),
-        const SizedBox(height: 14),
-        const Text('A thoughtful space for Muslims seeking marriage, built around intention, compatibility, and trust.', style: TextStyle(fontSize: 15, height: 1.55, color: Color(0xFF68746E))),
-        const Spacer(),
-        Container(width: double.infinity, padding: const EdgeInsets.all(13), decoration: BoxDecoration(color: ready ? const Color(0xFFEAF4EE) : const Color(0xFFFFF3E3), borderRadius: BorderRadius.circular(12)),
-          child: Text(ready ? 'Secure account services are ready' : 'Preview mode — backend configuration is required to create an account',
-            style: TextStyle(color: ready ? const Color(0xFF176B55) : const Color(0xFF8A5A16), fontSize: 12))),
-        const SizedBox(height: 16),
-        SizedBox(width: double.infinity, height: 54, child: FilledButton(onPressed: ready ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage())) : null, child: const Text('Create an account'))),
-        const SizedBox(height: 12),
-        SizedBox(width: double.infinity, height: 54, child: OutlinedButton(onPressed: ready ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage(initialLogin: true))) : null, child: const Text('I already have an account'))),
-        const SizedBox(height: 20),
-        const Center(child: Text('For adults 18+ • Marriage with intention', style: TextStyle(fontSize: 12, color: Color(0xFF849089)))),
-      ]))));
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              flex: 6,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(28, 30, 28, 26),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [aqdinDeepGreen, Color(0xFF10513F)]),
+                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(34)),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const AqdinLogo(light: true, markSize: 112),
+                    const SizedBox(height: 30),
+                    const Text('Find your person.\nBuild your future.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontFamily: 'AqdinSerif', fontSize: 30, height: 1.25, fontWeight: FontWeight.w700, color: Colors.white)),
+                    const SizedBox(height: 14),
+                    const Text('A thoughtful space for Muslims seeking marriage, built around intention, compatibility, and trust.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, height: 1.6, color: Color(0xFFD9E7DF))),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 4,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(26, 22, 26, 18),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: const [
+                      _WelcomeBenefit(icon: Icons.verified_user_outlined, label: 'Safer\nintroductions'),
+                      _WelcomeBenefit(icon: Icons.favorite_border, label: 'Serious\nintentions'),
+                      _WelcomeBenefit(icon: Icons.family_restroom, label: 'Family\ninvolvement'),
+                    ]),
+                    const SizedBox(height: 22),
+                    Container(width: double.infinity, padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: ready ? const Color(0xFFEAF4EE) : const Color(0xFFFFF3E3), borderRadius: BorderRadius.circular(13)),
+                      child: Text(ready ? 'Secure account services are ready' : 'Preview mode — backend configuration is required to create an account',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: ready ? aqdinGreen : const Color(0xFF8A5A16), fontSize: 12, fontWeight: FontWeight.w600))),
+                    const SizedBox(height: 14),
+                    SizedBox(width: double.infinity, height: 54, child: FilledButton(
+                      style: FilledButton.styleFrom(backgroundColor: aqdinGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                      onPressed: ready ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage())) : null,
+                      child: const Text('Create an account', style: TextStyle(fontWeight: FontWeight.w600)))),
+                    const SizedBox(height: 10),
+                    SizedBox(width: double.infinity, height: 54, child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(foregroundColor: aqdinGreen, side: const BorderSide(color: Color(0xFFB7CEC3)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                      onPressed: ready ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage(initialLogin: true))) : null,
+                      child: const Text('I already have an account'))),
+                    const SizedBox(height: 14),
+                    const Text('For adults 18+  •  Marriage with intention', style: TextStyle(fontSize: 11, color: Color(0xFF849089))),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
+}
+
+class _WelcomeBenefit extends StatelessWidget {
+  const _WelcomeBenefit({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+  @override
+  Widget build(BuildContext context) => Column(children: [
+    Container(width: 44, height: 44, decoration: const BoxDecoration(color: Color(0xFFE5F0E9), shape: BoxShape.circle),
+      child: Icon(icon, color: aqdinGreen, size: 22)),
+    const SizedBox(height: 7),
+    Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, height: 1.35, color: Color(0xFF52645A), fontWeight: FontWeight.w600)),
+  ]);
 }
