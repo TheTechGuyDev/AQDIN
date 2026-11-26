@@ -199,7 +199,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
     child:Stack(fit:StackFit.expand,children:[
       Image.network(p.photo,fit:BoxFit.cover,alignment:Alignment.topCenter,
         loadingBuilder:(context,child,progress)=>progress==null?child:Container(color:const Color(0xFFE9E4DE),child:const Center(child:CircularProgressIndicator(color:_green,strokeWidth:2))),
-        errorBuilder:(_,__,___)=>Container(color:p.tint,child:const Center(child:Icon(Icons.person,color:Colors.white,size:110)))),
+        errorBuilder:(_,__,___)=>Container(color:const Color(0xFFE7E1D8),child:const Center(child:Icon(Icons.person,color:_green,size:110)))),
       const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,stops:[0,.35,.7,1],colors:[Color(0x55000000),Colors.transparent,Color(0x22000000),Color(0xE6000000)]))),
       Positioned(top:17,left:16,child:Container(padding:const EdgeInsets.symmetric(horizontal:11,vertical:7),decoration:BoxDecoration(color:Colors.black.withOpacity(.35),borderRadius:BorderRadius.circular(30)),child:Row(mainAxisSize:MainAxisSize.min,children:[const Icon(Icons.auto_awesome,color:_gold,size:13),const SizedBox(width:5),const Text('AQDIN INTRODUCTION',style:TextStyle(color:Colors.white,fontSize:9,fontWeight:FontWeight.w800,letterSpacing:1))]))),
       Positioned(top:17,right:15,child:Container(padding:const EdgeInsets.all(7),decoration:BoxDecoration(color:Colors.black.withOpacity(.35),shape:BoxShape.circle),child:const Icon(Icons.more_horiz,color:Colors.white))),
