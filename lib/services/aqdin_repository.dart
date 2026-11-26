@@ -1,7 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Typed access to AQDIN's member data. All member-scoped queries rely on
-/// Supabase RLS; this client never uses a service-role credential.
+/// Typed access to AQDIN member data. Queries are protected by Supabase RLS.
 class AqdinRepository {
   AqdinRepository({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
@@ -13,61 +12,54 @@ class AqdinRepository {
     return id;
   }
 
-  Future<Map<String, dynamic>?> myProfile() async {
-    return _client.from('user_profiles').select().eq('id', _uid).maybeSingle();
-  }
+  Future<Map<String, dynamic>?> myProfile() =>
+      _client.from('user_profiles').select().eq('id', _uid).maybeSingle();
 
   Future<void> saveMyProfile(Map<String, dynamic> values) async {
-    final allowed = <String>{
+    const allowed = {
       'display_name', 'date_of_birth', 'country_code', 'city', 'bio',
       'gender', 'marital_status', 'profile_visibility', 'onboarding_complete',
     };
     final payload = Map<String, dynamic>.fromEntries(
-      values.entries.where((e) => allowed.contains(e.key));
+      values.entries.where((entry) => allowed.contains(entry.key)),
+    );
     payload['id'] = _uid;
     payload['updated_at'] = DateTime.now().toUtc().toIso8601String();
     await _client.from('user_profiles').upsert(payload);
   }
 
   Future<List<Map<String, dynamic>>> discover({int limit = 30}) async {
-    final me = await myProfile();
-    final query = _client
+    final rows = await _client
         .from('user_profiles')
         .select('id,display_name,date_of_birth,country_code,city,bio,gender,marital_status,profile_photos(storage_path,is_primary,moderation_status),profile_interests(interest)')
         .eq('profile_visibility', 'members')
         .eq('onboarding_complete', true)
         .neq('id', _uid)
         .limit(limit);
-    final rows = await query;
-    final blocked = await _client
-        .from('user_blocks')
-        .select('blocked_user_id')
-        .eq('blocker_user_id', _uid);
-    final blockedIds = blocked.map((e) => e['blocked_user_id'] as String).toSet();
-    final incomingBlocks = await _client
-        .from('user_blocks')
-        .select('blocker_user_id')
-        .eq('blocked_user_id', _uid);
-    blockedIds.addAll(incomingBlocks.map((e) => e['blocker_user_id'] as String));
-    final seen = await _client
-        .from('profile_actions')
-        .select('target_user_id')
-        .eq('actor_user_id', _uid);
-    final seenIds = seen.map((e) => e['target_user_id'] as String).toSet();
-    final currentCity = me?['city'];
+    final blocked = await _client.from('user_blocks')
+        .select('blocked_user_id').eq('blocker_user_id', _uid);
+    final blockedIds = blocked.map((row) => row['blocked_user_id'] as String).toSet();
+    final incoming = await _client.from('user_blocks')
+        .select('blocker_user_id').eq('blocked_user_id', _uid);
+    blockedIds.addAll(incoming.map((row) => row['blocker_user_id'] as String));
+    final seen = await _client.from('profile_actions')
+        .select('target_user_id').eq('actor_user_id', _uid);
+    final seenIds = seen.map((row) => row['target_user_id'] as String).toSet();
+
     return rows.where((row) {
       final id = row['id'] as String;
       return !blockedIds.contains(id) && !seenIds.contains(id);
     }).map((row) {
-      final photos = (row['profile_photos'] as List? ?? [])
-          .where((p) => p['moderation_status'] == 'approved')
+      final profile = Map<String, dynamic>.from(row);
+      final photos = (profile['profile_photos'] as List? ?? [])
+          .where((photo) => photo['moderation_status'] == 'approved')
           .toList();
       photos.sort((a, b) =>
-          (b['is_primary'] == true ? 1 : 0).compareTo(a['is_primary'] == true ? 1 : 0));
-      row['primary_photo_path'] =
+          (b['is_primary'] == true ? 1 : 0)
+              .compareTo(a['is_primary'] == true ? 1 : 0));
+      profile['primary_photo_path'] =
           photos.isEmpty ? null : photos.first['storage_path'];
-      row['same_city'] = currentCity != null && currentCity == row['city'];
-      return Map<String, dynamic>.from(row);
+      return profile;
     }).toList();
   }
 
@@ -98,7 +90,8 @@ class AqdinRepository {
   Future<List<Map<String, dynamic>>> myMatches() async {
     final rows = await _client.from('matches').select(
       'id,user_one,user_two,created_at,conversations(id)',
-    ).or('user_one.eq.$_uid,user_two.eq.$_uid').order('created_at', ascending: false);
+    ).or('user_one.eq.$_uid,user_two.eq.$_uid')
+        .order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(rows);
   }
 
@@ -135,8 +128,7 @@ class AqdinRepository {
   Future<List<Map<String, dynamic>>> messages(String conversationId) async {
     final rows = await _client.from('messages').select()
         .eq('conversation_id', conversationId)
-        .isFilter('deleted_at', null)
-        .order('created_at');
+        .isFilter('deleted_at', null).order('created_at');
     return List<Map<String, dynamic>>.from(rows);
   }
 
