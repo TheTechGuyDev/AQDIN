@@ -18,37 +18,16 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   flutter_native_splash: ^2.4.6
-  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
   assets:
     - assets/branding/aqdin_mark.svg
-  fonts:
-    - family: AqdinSerif
-      fonts:
-        - asset: assets/fonts/NotoSerif-Regular.ttf
-        - asset: assets/fonts/NotoSerif-Bold.ttf
-          weight: 700
-    - family: AqdinSans
-      fonts:
-        - asset: assets/fonts/Inter-Regular.otf
-        - asset: assets/fonts/Inter-SemiBold.otf
-          weight: 600
 
 flutter_native_splash:
   color: "#07362A"
-  image: assets/branding/aqdin_splash.png
   android_12:
     color: "#07362A"
-    image: assets/branding/aqdin_mark.png
   android: true
   ios: true
   web: true
-
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: assets/branding/aqdin_mark.png
-  adaptive_icon_background: "#07362A"
-  adaptive_icon_foreground: assets/branding/aqdin_mark.png
