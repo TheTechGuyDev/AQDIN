@@ -460,7 +460,7 @@ class _MemberProfileDetail extends StatelessWidget {
                   style: const TextStyle(color: Colors.white70,
                     letterSpacing: 1.2, fontSize: 11, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
-                _presenceBadge(profile.online),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.black.withOpacity(.35), borderRadius: BorderRadius.circular(22), border: Border.all(color: Colors.white30)), child: Row(mainAxisSize: MainAxisSize.min, children: [Container(width: 7, height: 7, decoration: BoxDecoration(color: profile.online ? const Color(0xFF69E09B) : const Color(0xFFB7C0BA), shape: BoxShape.circle)), const SizedBox(width: 6), Text(profile.online ? 'Online' : 'Offline', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700))])),
               ])),
           ]),
         ),
