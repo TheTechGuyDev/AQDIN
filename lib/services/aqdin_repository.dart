@@ -132,6 +132,148 @@ class AqdinRepository {
     return List<Map<String, dynamic>>.from(rows);
   }
 
+
+  Future<void> saveMarriagePreferences(Map<String, dynamic> values) async {
+    final payload = Map<String, dynamic>.from(values)..['user_id'] = _uid
+      ..['updated_at'] = DateTime.now().toUtc().toIso8601String();
+    await _client.from('marriage_preferences').upsert(payload);
+  }
+
+  Future<Map<String, dynamic>?> myMarriagePreferences() async =>
+      _client.from('marriage_preferences').select().eq('user_id', _uid).maybeSingle();
+
+  Future<void> saveInterests(List<String> interests) async {
+    await _client.from('profile_interests').delete().eq('user_id', _uid);
+    if (interests.isEmpty) return;
+    await _client.from('profile_interests').insert(
+      interests.map((value) => {'user_id': _uid, 'interest': value.trim()})
+        .where((row) => (row['interest'] as String).isNotEmpty).toList(),
+    );
+  }
+
+  Future<void> blockMember(String targetUserId) async {
+    await _client.from('user_blocks').upsert({
+      'blocker_user_id': _uid, 'blocked_user_id': targetUserId,
+    });
+  }
+
+  Future<void> unblockMember(String targetUserId) async {
+    await _client.from('user_blocks').delete()
+      .eq('blocker_user_id', _uid).eq('blocked_user_id', targetUserId);
+  }
+
+  Future<List<Map<String, dynamic>>> blockedMembers() async {
+    final rows = await _client.from('user_blocks').select(
+      'blocked_user_id,created_at,user_profiles!user_blocks_blocked_user_id_fkey(display_name,city)',
+    ).eq('blocker_user_id', _uid).order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  Future<void> reportMember({
+    required String targetUserId,
+    required String category,
+    String? description,
+  }) async {
+    await _client.from('user_reports').insert({
+      'reporter_user_id': _uid, 'reported_user_id': targetUserId,
+      'category': category, 'description': description,
+    });
+  }
+
+  Future<void> respondToIntroduction(String requestId, String status) async {
+    if (!['accepted', 'declined'].contains(status)) {
+      throw ArgumentError.value(status, 'status');
+    }
+    await _client.from('introduction_requests').update({
+      'status': status, 'responded_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', requestId).eq('recipient_user_id', _uid);
+  }
+
+  Future<void> inviteWali({
+    required String waliUserId,
+    String? relationship,
+    Map<String, dynamic>? permissions,
+  }) async {
+    await _client.from('wali_relationships').upsert({
+      'member_user_id': _uid, 'wali_user_id': waliUserId,
+      'relationship_label': relationship, 'status': 'pending',
+      'permissions': permissions ?? {
+        'view_profile': true, 'view_matches': false, 'view_messages': false,
+      },
+    }, onConflict: 'member_user_id,wali_user_id');
+  }
+
+  Future<List<Map<String, dynamic>>> myWaliRelationships() async {
+    final rows = await _client.from('wali_relationships').select()
+      .or('member_user_id.eq.$_uid,wali_user_id.eq.$_uid')
+      .order('invited_at', ascending: false);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  Future<void> updateWaliPermissions(String relationshipId, Map<String, dynamic> permissions) async {
+    await _client.from('wali_relationships').update({'permissions': permissions})
+      .eq('id', relationshipId).eq('member_user_id', _uid);
+  }
+
+  Future<void> revokeWali(String relationshipId) async {
+    await _client.from('wali_relationships').update({
+      'status': 'revoked', 'revoked_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', relationshipId).eq('member_user_id', _uid);
+  }
+
+  Future<void> saveUserSettings({
+    Map<String, dynamic>? notifications,
+    Map<String, dynamic>? privacy,
+  }) async {
+    final payload = <String, dynamic>{'user_id': _uid, 'updated_at': DateTime.now().toUtc().toIso8601String()};
+    if (notifications != null) payload['notification_preferences'] = notifications;
+    if (privacy != null) payload['privacy_preferences'] = privacy;
+    await _client.from('user_settings').upsert(payload);
+  }
+
+  Future<Map<String, dynamic>?> userSettings() async =>
+      _client.from('user_settings').select().eq('user_id', _uid).maybeSingle();
+
+  Future<String> uploadProfilePhoto({
+    required List<int> bytes,
+    required String fileExtension,
+  }) async {
+    final safeExtension = fileExtension.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (!['jpg', 'jpeg', 'png', 'webp'].contains(safeExtension)) {
+      throw ArgumentError('Use a JPG, PNG or WEBP image.');
+    }
+    final path = '$_uid/${DateTime.now().microsecondsSinceEpoch}.$safeExtension';
+    await _client.storage.from('profile-photos').uploadBinary(path, bytes);
+    await _client.from('profile_photos').insert({
+      'user_id': _uid, 'storage_path': path, 'moderation_status': 'pending',
+    });
+    return path;
+  }
+
+  Future<String> signedPhotoUrl(String path) =>
+      _client.storage.from('profile-photos').createSignedUrl(path, 3600);
+
+  Future<void> setPrimaryPhoto(String photoId) async {
+    await _client.from('profile_photos').update({'is_primary': false}).eq('user_id', _uid);
+    await _client.from('profile_photos').update({'is_primary': true})
+      .eq('id', photoId).eq('user_id', _uid);
+  }
+
+  Future<void> deleteProfilePhoto(String photoId, String storagePath) async {
+    await _client.from('profile_photos').delete().eq('id', photoId).eq('user_id', _uid);
+    await _client.storage.from('profile-photos').remove([storagePath]);
+  }
+
+  Future<void> updatePresence({bool? showOnline}) async {
+    final values = <String, dynamic>{'last_active_at': DateTime.now().toUtc().toIso8601String()};
+    if (showOnline != null) values['show_online'] = showOnline;
+    await _client.from('user_profiles').update(values).eq('id', _uid);
+  }
+
+  Stream<List<Map<String, dynamic>>> watchMessages(String conversationId) =>
+      _client.from('messages').stream(primaryKey: ['id'])
+        .eq('conversation_id', conversationId).order('created_at');
+
   Future<void> sendMessage(String conversationId, String body) async {
     final clean = body.trim();
     if (clean.isEmpty) return;
