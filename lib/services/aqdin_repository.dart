@@ -128,6 +128,44 @@ class AqdinRepository {
     });
   }
 
+
+  Future<List<Map<String, dynamic>>> myVerificationRecords() async {
+    final rows = await _client.from('verification_records').select()
+      .eq('user_id', _uid).order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  Future<void> requestVerification(String type) async {
+    if (!['selfie', 'identity'].contains(type)) throw ArgumentError('Unsupported verification type.');
+    await _client.from('verification_records').insert({
+      'user_id': _uid, 'verification_type': type, 'status': 'pending',
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> myConversations() async {
+    final memberships = await _client.from('conversation_members').select(
+      'conversation_id,conversations(id,match_id,created_at)',
+    ).eq('user_id', _uid);
+    final output = <Map<String, dynamic>>[];
+    for (final item in memberships) {
+      final conversation = item['conversations'];
+      if (conversation is Map<String, dynamic>) {
+        final members = await _client.from('conversation_members').select('user_id')
+          .eq('conversation_id', conversation['id']);
+        final other = members.map((m) => m['user_id'].toString()).firstWhere((id) => id != _uid, orElse: () => '');
+        if (other.isNotEmpty) {
+          final profile = await _client.from('user_profiles').select('id,display_name,city')
+            .eq('id', other).maybeSingle();
+          final last = await _client.from('messages').select('body,created_at,sender_user_id')
+            .eq('conversation_id', conversation['id']).order('created_at', ascending: false).limit(1).maybeSingle();
+          output.add({...conversation, 'other_user_id': other, 'other_profile': profile, 'last_message': last});
+        }
+      }
+    }
+    output.sort((a,b) => (b['created_at'] ?? '').toString().compareTo((a['created_at'] ?? '').toString()));
+    return output;
+  }
+
   Future<List<Map<String, dynamic>>> messages(String conversationId) async {
     final rows = await _client.from('messages').select()
         .eq('conversation_id', conversationId)
