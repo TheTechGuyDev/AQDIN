@@ -44,13 +44,33 @@ class AqdinRepository {
   }
 
   Future<List<Map<String, dynamic>>> discover({int limit = 30}) async {
-    final rows = await _client
+    final memberRows = await _client
         .from('user_profiles')
         .select('id,display_name,date_of_birth,country_code,city,bio,gender,marital_status,occupation,last_active_at,show_online,profile_photos(storage_path,is_primary,moderation_status),profile_interests(interest)')
         .eq('profile_visibility', 'members')
         .eq('onboarding_complete', true)
         .neq('id', _uid)
         .limit(limit);
+    final demoRows = await _client.from('aqdin_demo_profiles')
+        .select('id,display_name,date_of_birth,country_code,city,bio,gender,marital_status,occupation,interests,image_url')
+        .eq('is_active', true)
+        .limit(limit);
+    final rows = <Map<String, dynamic>>[
+      ...memberRows.map((row) => Map<String, dynamic>.from(row)),
+      ...demoRows.map((row) {
+        final demo = Map<String, dynamic>.from(row);
+        demo['id'] = 'demo:' + demo['id'].toString();
+        demo['profile_photos'] = [];
+        demo['profile_interests'] = ((demo['interests'] as List?) ?? [])
+            .map((interest) => {'interest': interest}).toList();
+        demo['primary_photo_url'] = demo['image_url'];
+        demo['last_active_at'] = null;
+        demo['show_online'] = false;
+        demo['occupation'] = 'DEMO • ' + (demo['occupation'] ?? 'Member').toString();
+        demo['bio'] = 'DEMO PROFILE — Not a real AQDIN member. ' + (demo['bio'] ?? '').toString();
+        return demo;
+      }),
+    ];
     final blocked = await _client.from('user_blocks')
         .select('blocked_user_id').eq('blocker_user_id', _uid);
     final blockedIds = blocked.map((row) => row['blocked_user_id'] as String).toSet();
@@ -82,6 +102,7 @@ class AqdinRepository {
   }
 
   Future<void> pass(String targetUserId) async {
+    if (targetUserId.startsWith('demo:')) return;
     await _client.from('profile_actions').upsert({
       'actor_user_id': _uid,
       'target_user_id': targetUserId,
@@ -90,6 +111,7 @@ class AqdinRepository {
   }
 
   Future<String?> like(String targetUserId) async {
+    if (targetUserId.startsWith('demo:')) return null;
     final result = await _client.rpc(
       'process_profile_like',
       params: {'target': targetUserId},
@@ -98,6 +120,7 @@ class AqdinRepository {
   }
 
   Future<void> saveProfile(String targetUserId) async {
+    if (targetUserId.startsWith('demo:')) return;
     await _client.from('profile_actions').upsert({
       'actor_user_id': _uid,
       'target_user_id': targetUserId,
