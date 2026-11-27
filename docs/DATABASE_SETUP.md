@@ -46,3 +46,12 @@ The Flutter client uses only `SUPABASE_URL` and the Supabase publishable key. Ne
 - Government-ID/selfie verification requires a selected verification provider and secure server-side integration; a client-side badge must never claim verification before that provider confirms it.
 - Wali invitations require the invited person's AQDIN user ID at this stage. Email-address invitation delivery needs a trusted Edge Function so private account lookup is never exposed to the client.
 - Payment processing must be connected to a supported payment provider before subscriptions can accept real money.
+
+
+## Demo discovery profiles and photo upload repair
+
+Apply `supabase/migrations/202611270001_demo_profiles_and_photo_upload_fix.sql` in the existing project's SQL Editor after migrations 001–008. This migration is additive and safe to rerun. It seeds 100 male and 100 female illustrative demo profiles, with portrait URLs, bios, locations, occupations and interests. Demo profiles are stored separately from `auth.users`, cannot sign in, are clearly labelled in their discovery bio/occupation, and do not create real matches or messages. They are visible only to authenticated AQDIN members.
+
+The same migration reasserts the private `profile-photos` bucket, grants the authenticated role access to its own photo metadata rows, and recreates owner-scoped Storage upload/read/update/delete policies. The bucket accepts JPEG, PNG and WEBP images up to 8 MB. Do not make the bucket public and do not disable row-level security.
+
+If an upload still fails after applying the migration, copy the exact error shown in AQDIN. Common causes are an unapplied migration, a file larger than 8 MB, an unsupported image format, or signing in with a different account from the profile owner. Never paste a service-role key into the app.
