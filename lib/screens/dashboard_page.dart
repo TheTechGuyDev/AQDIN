@@ -72,6 +72,10 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
 
   void _open(String title, {String? detail}) {
     final key = title.toLowerCase();
+    if (key.contains('photo') || key.contains('media') || key.contains('personal details')) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AccountProfilePage()));
+      return;
+    }
     final Widget page = key.contains('wali') || key.contains('family')
       ? const WaliManagementPage()
       : key.contains('marriage preferences')
