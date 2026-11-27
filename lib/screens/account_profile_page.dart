@@ -124,12 +124,25 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
                   ),
                   child: Column(
                     children: [
-                      Container(
-                        width: 86,
-                        height: 86,
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                        child: const Icon(Icons.person_rounded, color: _leaf, size: 48),
-                      ),
+                      Builder(builder: (context) {
+                        final photos = (_profile?['photos'] as List? ?? []).cast<Map<String, dynamic>>();
+                        Map<String, dynamic>? primary;
+                        for (final photo in photos) {
+                          if (photo['is_primary'] == true) { primary = photo; break; }
+                        }
+                        primary ??= photos.isNotEmpty ? photos.first : null;
+                        final photoUrl = primary?['signed_url']?.toString() ?? '';
+                        return Container(
+                          width: 104,
+                          height: 104,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                          child: photoUrl.isNotEmpty
+                              ? Image.network(photoUrl, fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded, color: _leaf, size: 48))
+                              : const Icon(Icons.person_rounded, color: _leaf, size: 48),
+                        );
+                      }),
                       const SizedBox(height: 12),
                       Text(
                         _name.text.isEmpty ? 'Your name' : _name.text,
