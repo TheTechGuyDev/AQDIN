@@ -335,8 +335,9 @@ class AqdinRepository {
     final path = '$_uid/${DateTime.now().microsecondsSinceEpoch}.$safeExtension';
     final contentType = safeExtension == 'png' ? 'image/png' : safeExtension == 'webp' ? 'image/webp' : 'image/jpeg';
     await _client.storage.from('profile-photos').uploadBinary(path, bytes, fileOptions: FileOptions(contentType: contentType, upsert: false));
+    await _client.from('profile_photos').update({'is_primary': false}).eq('user_id', _uid);
     await _client.from('profile_photos').insert({
-      'user_id': _uid, 'storage_path': path, 'moderation_status': 'pending',
+      'user_id': _uid, 'storage_path': path, 'moderation_status': 'pending', 'is_primary': true,
     });
     return path;
   }
