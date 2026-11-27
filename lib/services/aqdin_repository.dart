@@ -43,7 +43,7 @@ class AqdinRepository {
     await _client.from('user_profiles').upsert(payload);
   }
 
-  Future<List<Map<String, dynamic>>> discover({int limit = 30}) async {
+  Future<List<Map<String, dynamic>>> discover({int limit = 230}) async {
     final memberRows = await _client
         .from('user_profiles')
         .select('id,display_name,date_of_birth,country_code,city,bio,gender,marital_status,occupation,last_active_at,show_online,profile_photos(storage_path,is_primary,moderation_status),profile_interests(interest)')
