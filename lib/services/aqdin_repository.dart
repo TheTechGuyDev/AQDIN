@@ -51,10 +51,16 @@ class AqdinRepository {
         .eq('onboarding_complete', true)
         .neq('id', _uid)
         .limit(limit);
-    final demoRows = await _client.from('aqdin_demo_profiles')
-        .select('id,display_name,date_of_birth,country_code,city,bio,gender,marital_status,occupation,interests,image_url')
-        .eq('is_active', true)
-        .limit(limit);
+    var demoRows = <Map<String, dynamic>>[];
+    try {
+      final result = await _client.from('aqdin_demo_profiles')
+          .select('id,display_name,date_of_birth,country_code,city,bio,gender,marital_status,occupation,interests,image_url')
+          .eq('is_active', true)
+          .limit(limit);
+      demoRows = result.map((row) => Map<String, dynamic>.from(row)).toList();
+    } on PostgrestException {
+      // Keep real-member discovery available until the demo seed migration is applied.
+    }
     final rows = <Map<String, dynamic>>[
       ...memberRows.map((row) => Map<String, dynamic>.from(row)),
       ...demoRows.map((row) {
