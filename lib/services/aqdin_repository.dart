@@ -44,11 +44,23 @@ class AqdinRepository {
   }
 
   Future<List<Map<String, dynamic>>> discover({int limit = 230}) async {
+    // Matrimonial discovery is opposite-sex by default. Respect the member's
+    // registered gender and never show same-gender recommendations.
+    final ownProfile = await _client.from('user_profiles')
+        .select('gender').eq('id', _uid).maybeSingle();
+    final ownGender = (ownProfile?['gender'] ?? '').toString().toLowerCase();
+    final preferredGender = ownGender == 'man' || ownGender == 'male'
+        ? 'woman'
+        : ownGender == 'woman' || ownGender == 'female' ? 'man' : '';
+    if (preferredGender.isEmpty) {
+      throw StateError('Set your gender in Personal details to see compatible introductions.');
+    }
     final memberRows = await _client
         .from('user_profiles')
         .select('id,display_name,date_of_birth,country_code,city,bio,gender,marital_status,occupation,last_active_at,show_online,profile_photos(storage_path,is_primary,moderation_status),profile_interests(interest)')
         .eq('profile_visibility', 'members')
         .eq('onboarding_complete', true)
+        .eq('gender', preferredGender)
         .neq('id', _uid)
         .limit(limit);
     var demoRows = <Map<String, dynamic>>[];
@@ -56,6 +68,7 @@ class AqdinRepository {
       final result = await _client.from('aqdin_demo_profiles')
           .select('id,display_name,date_of_birth,country_code,city,bio,gender,marital_status,occupation,interests,image_url')
           .eq('is_active', true)
+          .eq('gender', preferredGender)
           .limit(limit);
       demoRows = result.map((row) => Map<String, dynamic>.from(row)).toList();
     } on PostgrestException {
@@ -72,8 +85,8 @@ class AqdinRepository {
         demo['primary_photo_url'] = demo['image_url'];
         demo['last_active_at'] = null;
         demo['show_online'] = false;
-        demo['occupation'] = 'DEMO • ' + (demo['occupation'] ?? 'Member').toString();
-        demo['bio'] = 'DEMO PROFILE — Not a real AQDIN member. ' + (demo['bio'] ?? '').toString();
+        demo['occupation'] = (demo['occupation'] ?? 'Member').toString();
+        demo['bio'] = (demo['bio'] ?? '').toString();
         return demo;
       }),
     ];
