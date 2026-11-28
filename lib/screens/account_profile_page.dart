@@ -138,7 +138,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
                           clipBehavior: Clip.antiAlias,
                           decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                           child: photoUrl.isNotEmpty
-                              ? Image.network(photoUrl, fit: BoxFit.cover,
+                              ? Image.network(photoUrl, webHtmlElementStrategy: WebHtmlElementStrategy.prefer, fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded, color: _leaf, size: 48))
                               : const Icon(Icons.person_rounded, color: _leaf, size: 48),
                         );
@@ -173,7 +173,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
                       return Padding(padding: const EdgeInsets.only(right: 9), child: ClipRRect(
                         borderRadius: BorderRadius.circular(14),
                         child: url.isEmpty ? Container(width: 90, color: const Color(0xFFEAF2EC), child: const Icon(Icons.image_not_supported))
-                          : Image.network(url, width: 90, height: 112, fit: BoxFit.cover),
+                          : Image.network(url, webHtmlElementStrategy: WebHtmlElementStrategy.prefer, width: 90, height: 112, fit: BoxFit.cover),
                       ));
                     }).toList())),
                 const SizedBox(height: 22),
