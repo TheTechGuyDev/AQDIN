@@ -276,7 +276,6 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
         const SizedBox(height:10),
         Wrap(spacing:6,children:p.values.map((v)=>Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:6),decoration:BoxDecoration(color:Colors.white.withOpacity(.2),borderRadius:BorderRadius.circular(20),border:Border.all(color:Colors.white24)),child:Text(v,style:const TextStyle(color:Colors.white,fontSize:10,fontWeight:FontWeight.w700)))).toList()),
         const SizedBox(height:4),
-        const Text('Preview profile • Sample data',style:TextStyle(color:Colors.white60,fontSize:9)),
         const SizedBox(height:10),
         Row(mainAxisAlignment:MainAxisAlignment.spaceEvenly,children:[
           _photoAction(Icons.close_rounded,const Color(0xFFE35F67),()=>_swipe(false),54),
