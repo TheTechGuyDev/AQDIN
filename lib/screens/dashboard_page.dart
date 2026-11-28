@@ -196,7 +196,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
         return GestureDetector(onTap:()=>_openMember(p),child:ClipRRect(
           borderRadius:BorderRadius.circular(22),
           child:Stack(fit:StackFit.expand,children:[
-            p.photo.isNotEmpty ? Image.network(p.photo,fit:BoxFit.cover,errorBuilder:(_,__,___)=>Container(color:const Color(0xFFE7E1D8),child:const Icon(Icons.person,size:60,color:_green))) : Container(color:const Color(0xFFE7E1D8),child:const Icon(Icons.person,size:60,color:_green)),
+            p.photo.isNotEmpty ? Image.network(p.photo,webHtmlElementStrategy: WebHtmlElementStrategy.prefer,fit:BoxFit.cover,errorBuilder:(_,__,___)=>Container(color:const Color(0xFFE7E1D8),child:const Icon(Icons.person,size:60,color:_green))) : Container(color:const Color(0xFFE7E1D8),child:const Icon(Icons.person,size:60,color:_green)),
             const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0xCC000000)],stops:[.45,1]))),
             Positioned(top:12,left:11,child:_presenceBadge(p.online)),
             Positioned(left:13,right:10,bottom:13,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
@@ -256,7 +256,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   Widget _fullPhotoCard(_Profile p)=>ClipRRect(
     borderRadius:BorderRadius.circular(30),
     child:Stack(fit:StackFit.expand,children:[
-      p.photo.isNotEmpty ? Image.network(p.photo,fit:BoxFit.cover,alignment:Alignment.topCenter,
+      p.photo.isNotEmpty ? Image.network(p.photo,webHtmlElementStrategy: WebHtmlElementStrategy.prefer,fit:BoxFit.cover,alignment:Alignment.topCenter,
         loadingBuilder:(context,child,progress)=>progress==null?child:Container(color:const Color(0xFFE9E4DE),child:const Center(child:CircularProgressIndicator(color:_green,strokeWidth:2))),
         errorBuilder:(_,__,___)=>Container(color:const Color(0xFFE7E1D8),child:const Center(child:Icon(Icons.person,color:_green,size:110)))) : Container(color:const Color(0xFFE7E1D8),child:const Center(child:Icon(Icons.person,color:_green,size:110))),
       const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,stops:[0,.35,.7,1],colors:[Color(0x55000000),Colors.transparent,Color(0x22000000),Color(0xE6000000)]))),
@@ -376,7 +376,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
           final url=snapshot.data ?? '';
           return Container(width:56,height:56,clipBehavior:Clip.antiAlias,
             decoration:const BoxDecoration(shape:BoxShape.circle,color:Color(0xFFEAF1E9)),
-            child:url.isNotEmpty ? Image.network(url,fit:BoxFit.cover,
+            child:url.isNotEmpty ? Image.network(url,webHtmlElementStrategy: WebHtmlElementStrategy.prefer,fit:BoxFit.cover,
               errorBuilder:(_,__,___)=>const Icon(Icons.person_outline,color:_green,size:30))
               : const Icon(Icons.person_outline,color:_green,size:30));
         }),
@@ -537,7 +537,7 @@ class _MemberProfileDetail extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w800)),
         flexibleSpace: FlexibleSpaceBar(
           background: Stack(fit: StackFit.expand, children: [
-            Image.network(profile.photo, fit: BoxFit.cover,
+            Image.network(profile.photo, webHtmlElementStrategy: WebHtmlElementStrategy.prefer, fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(
                     color: const Color(0xFFE7E1D8),
                     child: const Icon(Icons.person, size: 100, color: _green))),
